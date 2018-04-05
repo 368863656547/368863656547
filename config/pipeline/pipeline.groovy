@@ -15,7 +15,7 @@ agent none
 					def build_version
 				}
 				
-				checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'githubcred', name: 'github user', url: 'https://github.com/maternavw/kubeshowcase.git']]])
+				checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '368863656547', name: '368863656547', url: 'https://github.com/368863656547/368863656547.git']]])
 				
 				script{
 					//get buildnumber
