@@ -1,0 +1,25 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --file docker-compose-kubernetes.yml
+    kompose.version: 1.10.0 (8bb0907)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: reverse-proxy
+  name: reverse-proxy
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: reverse-proxy
+    spec:
+      containers:
+      - image: reverse-proxy
+        name: reverse-proxy
+        resources: {}
+      restartPolicy: Always
+status: {}

@@ -1,0 +1,40 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --file docker-compose-kubernetes.yml
+    kompose.version: 1.10.0 (8bb0907)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: appserver
+  name: appserver
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: appserver
+    spec:
+      containers:
+#      - image: atsea_app
+      - image: 368863656547.dkr.ecr.eu-central-1.amazonaws.com/appserver:TAG
+        name: appserver
+        ports:
+        - containerPort: 8080
+        - containerPort: 5005
+        resources: {}
+        volumeMounts:                       
+        - mountPath: /run/secrets
+          name: secrets-mount
+          # readOnly: true
+      restartPolicy: Always
+      volumes:
+      - name: secrets-mount
+        secret:
+          secretName: secrets
+          items:
+          - key: postgres-password
+            path: postgres_password
+status: {}

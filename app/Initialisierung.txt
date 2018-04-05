@@ -1,0 +1,90 @@
+
+Vorgehensweise zur Installation:
+
+1. Schritte, die nur einmal gemacht werden müssen:
+
+C:\Users\hdreier\Downloads\atsea-sample-shop-app-master
+
+mkdir certs
+openssl req -newkey rsa:4096 -nodes -sha256 -keyout certs\domain.key -x509 -days 365 -out certs\domain.crt
+docker swarm init
+
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-0hv9w8izd61nu8ktqujr1q9ix9osfnytklqx1tojbzrndszxnh-3qvjq70nc34ktueorprd443vl 192.168.65.3:2377
+
+To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
+
+
+C:\Users\hdreier\Downloads\atsea-sample-shop-app-master>docker secret create revprox_cert certs\domain.crt
+pwhra8j8vgi72vcmwc44qgx5k
+
+C:\Users\hdreier\Downloads\atsea-sample-shop-app-master>docker secret create revprox_key certs\domain.key
+l8iv5xkocf56e423e6q0bma6x
+
+C:\Users\hdreier\Downloads\atsea-sample-shop-app-master>docker secret create postgres_password certs\domain.key
+akoqqvr7cb25nyjvnkebmgm9p
+
+C:\Users\hdreier\Downloads\atsea-sample-shop-app-master>echo staging | docker secret create staging_token -
+q1exk91oely7r7ujh4mffku6a
+
+
+
+
+
+
+https://blog.docker.com/2017/05/spring-boot-development-docker/
+https://blog.docker.com/2017/05/developing-spring-boot-app-docker-atsea-demo-app/
+
+https://github.com/dockersamples/atsea-sample-shop-app
+
+# wie richte ich einen Kubernetes-Cluster auf AWS mit KOPS ein:
+https://github.com/kubernetes/kops/blob/master/docs/aws.md
+
+https://docs.docker.com/docker-for-mac/kubernetes/
+
+# Bereitstellung Docker auf Kub. (aber leider für Gcloud)
+https://cloud.google.com/kubernetes-engine/docs/tutorials/hello-app
+
+https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html
+
+# Bauen eines Kubernetes Deployments aus Docker-compose
+https://kubernetes.io/docs/tools/kompose/user-guide/
+
+https://github.com/aws-samples/aws-workshop-for-kubernetes/tree/master/01-path-basics/101-start-here
+https://github.com/aws-samples/aws-workshop-for-kubernetes/tree/master/01-path-basics/102-your-first-cluster
+
+
+http://18.197.109.166:8080 (atsea-Shop)
+
+https://docs.docker.com/engine/reference/commandline/swarm_init/
+https://docs.docker.com/engine/swarm/swarm-tutorial/create-swarm/
+https://docs.docker.com/swarm/reference/manage/
+
+https://hackernoon.com/a-kubernetes-guide-for-docker-swarm-users-c14c8aa266cc
+https://github.com/kubernetes/kompose/issues/296
+https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/
+
+https://blog.giantswarm.io/understanding-basic-kubernetes-concepts-iv-secrets-and-configmaps/
+https://kubernetes.io/docs/concepts/configuration/secret/
+https://technologyconversations.com/2018/01/10/kubernetes-secrets-compared-to-docker-swarm-secrets/
+
+https://docs.docker.com/compose/install/
+
+
+Quelle für Docker-compose:
+https://github.com/docker/compose/releases
+
+https://docs.docker.com/docker-for-aws/
+
+https://gist.github.com/hitsujiwool/81fcab49f9ccf8ac5835
+https://gist.github.com/0sc/71975ba7e9c1a32d37c815e2e2806920
+https://gist.github.com/ReedD/a46c10ccce5af12c8d5f
+https://www.mattkimber.co.uk/setting-up-docker-and-docker-compose-on-aws/
+
+http://www.bogotobogo.com/DevOps/Docker/Docker_Install_On_Amazon_Linux_AMI.php
+http://magescale.com/installing-docker-docker-compose-on-aws-linux-ami/
+
+

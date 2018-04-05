@@ -1,0 +1,28 @@
+#################### Service database
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --file docker-compose-kubernetes.yml
+    kompose.version: 1.10.0 (8bb0907)
+  creationTimestamp: 2018-03-27T10:52:57Z
+  labels:
+    io.kompose.service: database
+  name: database
+  namespace: default
+  resourceVersion: "505"
+  selfLink: /api/v1/namespaces/default/services/database
+  uid: 0295dced-31ad-11e8-813c-02b0290a3f2c
+spec:
+  clusterIP: 100.71.205.33
+  ports:
+  - name: "5432"
+    port: 5432
+    protocol: TCP
+    targetPort: 5432
+  selector:
+    io.kompose.service: database
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

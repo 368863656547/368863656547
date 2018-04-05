@@ -1,0 +1,73 @@
+# SonarQube
+# Auf einer t2.medium EC2 Instanz (Amazon Linux AMI) installiert, keine "echte" Datenbank hinter dem Server.
+# Hat zur Folge, dass bei einem Neustart der Instanz Daten verloren gehen.
+# Leider ist es nicht möglich, SonarQube über die CLI einzurichten. 
+# Daher ist es momentan nicht möglich den Server komplett zu verskripten.
+
+### Installation ###
+# Download, unzip and install SonarQube
+# zu beachten: erst auf der Linux Instanz entpacken => Dateiausführungsrechte !
+sudo yum -y update
+mkdir /home/ec2-user/sonarqube
+cd /home/ec2-user/sonarqube/
+sudo wget https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-7.0.zip
+unzip sonarqube-7.0.zip
+
+# Sicherstellen das der Benutzer "ec2-user" die Berechtigungen hat SonarQube auszuführen
+sudo chown -R ec2-user:ec2-user /home/ec2-user/sonarqube
+
+# Installation java 1.8
+sudo yum install java-1.8.0
+
+# Deinstallation java 1.7
+sudo yum remove java-1.7.0-openjdk
+
+#Start SonarQube als ec2-user
+sudo runuser -l ec2-user -c '/home/ec2-user/sonarqube/sonarqube-7.0/bin/linux-x86-64/sonar.sh console'
+
+
+#Dies alles ist in einem CloudFormation skript hinterlegt und kann wie folgt ausgeführt werden:
+C:\>aws cloudformation create-stack --capabilities CAPABILITY_NAMED_IAM --stack-name SonarQube --template-body file://SonarQube.yml
+
+
+
+### Konfiguration/Drehbuch ###
+
+# Konfiguration über Webseite
+http://EC2-Ip-Adresse:9000
+# Login
+# Credentials
+admin:admin
+# Es geht ein Tutorial Fenster auf
+# Ein Token muss generiert werden, dieser dient dem Jenkins später als Login (Name ist in diesem Fall egal)
+# Name eingeben, generate drücken, generiertes Token aufschreiben !
+z.B.: Susi2:8244aca640383274ef020c05fd905064dab65076
+# Als nächstes wird die Project Main Language abgefragt, zur Auswahl stehen:
+# Java, C# oder VB.NET oder Other (JS, Python, PHP, ...)
+# In unserem Fall Java anklicken
+# Anschließend wird nach der Build Technologie gefragt.
+# Wir nutzen Maven zum ausführen der SonarQube Analyse(nutzen aber keine Build Technologien in dem Sinne, die Pipeline ist ein Groovy Skript)
+# Nach Auswahl der Build Technologie wird auf der rechten Tutorialseite ein Code Snippet zum Ausführen der SonarQube Analyse angezeigt.
+# Die Analyse selber muss aus dem Projektverzeichniss ausgeführt werden.
+
+mvn sonar:sonar -Dsonar.host.url=http://35.158.78.192:9000 -Dsonar.login=8244aca640383274ef020c05fd905064dab65076
+
+# Auf Finish this Tutorial klicken. Das Tutorial kann jeder Zeit unter ? erneut gestartet werden.
+
+# Projekte
+# Ein Projekt wird durch die Pipeline erzeugt und muss nicht extra über die Oberfläche erzeugt werden.
+# 
+
+# Einrichten eines Quality Gates
+# Unter Quality Gates im linken Register Create anklicken. 
+# Der Rest ist selbsterklärend.
+# Das quality Gate kann einem Projekt zugewiesen werden.
+# Default Quality Gates werden an alle Projekte gebunden.
+
+# Unter Administration bei General Settings auf Java klicken.
+# Bei JaCoCo 
+app/app/target/jacoco.exec 
+app/app/target/jacoco-it.exec
+# eintragen
+
+

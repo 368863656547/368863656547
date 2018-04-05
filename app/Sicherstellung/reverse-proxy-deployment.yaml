@@ -1,0 +1,39 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --file docker-compose-kubernetes.yml
+    kompose.version: 1.10.0 (8bb0907)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: reverse-proxy
+  name: reverse-proxy
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: reverse-proxy
+    spec:
+      containers:
+#      - image: reverse-proxy
+      - image: 368863656547.dkr.ecr.eu-central-1.amazonaws.com/reverse-proxy:TAG
+        name: reverse-proxy
+        resources: {}
+        volumeMounts:                       
+        - mountPath: /run/secrets
+          name: secrets-mount
+          # readOnly: true
+      restartPolicy: Always
+      volumes:
+      - name: secrets-mount
+        secret:
+          secretName: secrets
+          items:
+          - key: revprox-cert 
+            path: revprox_cert 
+          - key: revprox-key 
+            path: revprox_key 
+status: {}

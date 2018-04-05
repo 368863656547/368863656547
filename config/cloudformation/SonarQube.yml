@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: SonarQube Template
+Resources:
+  sonarqubeinstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      DisableApiTermination: 'false'
+      InstanceInitiatedShutdownBehavior: 'stop'
+      ImageId: 'ami-ac442ac3'
+      InstanceType: 't2.small'
+      KeyName: 'ShowcaseKeyPair'
+      #!Ref KeyName
+      UserData: !Base64 
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -xe
+            - |
+              sudo yum -y update
+            - |
+              mkdir /home/ec2-user/sonarqube
+            - |
+              cd /home/ec2-user/sonarqube/
+            - |
+              sudo wget https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-7.0.zip
+            - |
+              unzip sonarqube-7.0.zip
+            - |
+              sudo yum install -y java-1.8.0
+            - |
+              sudo yum remove -y java-1.7.0-openjdk
+            - |
+              sudo rm -f *.zip
+            - |
+              sudo chown -R ec2-user:ec2-user /home/ec2-user/sonarqube
+            - |
+              sudo runuser -l ec2-user -c '/home/ec2-user/sonarqube/sonarqube-7.0/bin/linux-x86-64/sonar.sh console'
+      Monitoring: 'false'
+      Tags:
+        - Key: Name
+          Value: SonarQubeTest
+      NetworkInterfaces:
+        - DeleteOnTermination: 'true'
+          Description: 'Primary network interface'
+          DeviceIndex: 0
+          SubnetId: 'subnet-1732e96a'
+          PrivateIpAddresses: 
+            - PrivateIpAddress: '172.31.42.219'
+              Primary: true
+          GroupSet: 
+            - 'sg-0202f16ec9f8b415e'
