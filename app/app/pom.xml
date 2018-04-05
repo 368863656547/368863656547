@@ -9,7 +9,7 @@
 
   <groupId>com.docker.atsea</groupId>
   <artifactId>AtSea</artifactId>
-  <version>0.0.1</version>
+  <version>1.1.0</version>
   <name>atsea</name>
   
   <properties>
