@@ -63,7 +63,7 @@ agent none
 		}
 
 
-      stage("SonarQube Analysis") {
+      stage("Unittests") {
 		agent any
 		steps {
 				lock('the_atsea_shop-app-test'){
@@ -82,7 +82,7 @@ agent none
 				}
 			}
 		}
-      }
+      
 
 
       stage("SonarQube Analysis") {
