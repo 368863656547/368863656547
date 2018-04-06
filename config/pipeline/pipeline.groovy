@@ -57,8 +57,15 @@ agent none
 								mvn package
 							"""
 					}
-				}
-				
+				}	
+			}		
+			
+		}
+
+
+      stage("SonarQube Analysis") {
+		agent any
+		steps {
 				lock('the_atsea_shop-app-test'){
 					script{
 						echo 'Test ..'
@@ -73,13 +80,9 @@ agent none
 					junit 'app/app/target/surefire-reports/*.xml'
 					archiveArtifacts artifacts: 'app/app/target/*.jar', fingerprint: true
 				}
-				
-			}		
-			
+			}
 		}
-
-
-
+      }
 
 
       stage("SonarQube Analysis") {

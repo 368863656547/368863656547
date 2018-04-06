@@ -89,14 +89,14 @@ public class UnitTest {
 	public void whenProductIdIdProvided_theReturnedDescriptionIsIncorrect(){
 		Mockito.when(mockProductServiceImpl.findById(1l)).thenReturn(returnProduct);
 		String testDescription = returnProduct.getDescription();
-		Assert.assertNotEquals("a whale", testDescription);
+		Assert.assertEquals("a whale", testDescription);
 	}
 	
 	// Test OrderService implementation
-	//@Test
-	//public void whenOrderFindById_theReferenceOrderDoesNotMatch() {
-	//	Mockito.when(mockOrderServiceImpl.findById(1l)).thenReturn(referenceOrder);
-	//	Assert.assertNotEquals(mockOrder, referenceOrder);
-	//}
+	@Test
+	public void whenOrderFindById_theReferenceOrderDoesNotMatch() {
+		Mockito.when(mockOrderServiceImpl.findById(1l)).thenReturn(referenceOrder);
+		Assert.assertNotEquals(mockOrder, referenceOrder);
+	}
 	
 }
