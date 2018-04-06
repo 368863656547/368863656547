@@ -93,10 +93,10 @@ public class UnitTest {
 	}
 	
 	// Test OrderService implementation
-	@Test
-	public void whenOrderFindById_theReferenceOrderDoesNotMatch() {
-		Mockito.when(mockOrderServiceImpl.findById(1l)).thenReturn(referenceOrder);
-		Assert.assertNotEquals(mockOrder, referenceOrder);
-	}
+	//@Test
+	//public void whenOrderFindById_theReferenceOrderDoesNotMatch() {
+	//	Mockito.when(mockOrderServiceImpl.findById(1l)).thenReturn(referenceOrder);
+	//	Assert.assertNotEquals(mockOrder, referenceOrder);
+	//}
 	
 }
