@@ -1,0 +1,28 @@
+#################### Service payment-gateway
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --file docker-compose-kubernetes.yml
+    kompose.version: 1.10.0 (8bb0907)
+  creationTimestamp: 2018-03-27T10:52:57Z
+  labels:
+    io.kompose.service: payment-gateway
+  name: payment-gateway
+  namespace: default
+  resourceVersion: "511"
+  selfLink: /api/v1/namespaces/default/services/payment-gateway
+  uid: 0299db18-31ad-11e8-813c-02b0290a3f2c
+spec:
+  clusterIP: None
+  ports:
+  - name: headless
+    port: 55555
+    protocol: TCP
+    targetPort: 55555
+  selector:
+    io.kompose.service: payment-gateway
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

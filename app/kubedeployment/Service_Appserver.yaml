@@ -1,0 +1,32 @@
+#################### Service appserver
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --file docker-compose-kubernetes.yml
+    kompose.version: 1.10.0 (8bb0907)
+  creationTimestamp: 2018-03-27T10:52:57Z
+  labels:
+    io.kompose.service: appserver
+  name: appserver
+  namespace: default
+  resourceVersion: "489"
+  selfLink: /api/v1/namespaces/default/services/appserver
+  uid: 028f6170-31ad-11e8-813c-02b0290a3f2c
+spec:
+  clusterIP: 100.67.252.193
+  ports:
+  - name: "8080"
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: "5005"
+    port: 5005
+    protocol: TCP
+    targetPort: 5005
+  selector:
+    io.kompose.service: appserver
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

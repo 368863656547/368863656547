@@ -1,0 +1,47 @@
+#################### Service apploadbalancer
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: 2018-03-27T10:54:57Z
+  labels:
+    io.kompose.service: appserver
+  name: apploadbalancer
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:eu-central-1:368863656547:certificate/93a8a7ea-0954-47dc-b75d-6f172895654d
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+  namespace: default
+  resourceVersion: "704"
+  selfLink: /api/v1/namespaces/default/services/apploadbalancer
+  # uid: 49af186a-31ad-11e8-813c-02b0290a3f2c
+spec:
+  # clusterIP: 100.64.40.223
+  externalTrafficPolicy: Cluster
+  ports:
+# Kubernetes 1.8 does not allow duplicate targetPort (bug)
+  # - name: port-1
+    # nodePort: 30482
+    # port: 8080
+    # protocol: TCP
+    # targetPort: 8080
+  - name: port-2
+    # nodePort: 0
+    port: 443
+    protocol: TCP
+    targetPort: 8080
+  - name: port-3
+    # nodePort: 30264
+    port: 5005
+    protocol: TCP
+    targetPort: 5005
+  # - name: port-4
+    # nodePort: 30482
+    # port: 80
+    # protocol: TCP
+    # targetPort: 8080
+
+  selector:
+    io.kompose.service: appserver
+  # sessionAffinity: None
+  type: LoadBalancer
+# status:
