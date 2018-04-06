@@ -18,22 +18,8 @@ spec:
         io.kompose.service: reverse-proxy
     spec:
       containers:
-#      - image: reverse-proxy
-      - image: 368863656547.dkr.ecr.eu-central-1.amazonaws.com/reverse-proxy:TAG
+      - image: reverse-proxy
         name: reverse-proxy
         resources: {}
-        volumeMounts:                       
-        - mountPath: /run/secrets
-          name: secrets-mount
-          # readOnly: true
       restartPolicy: Always
-      volumes:
-      - name: secrets-mount
-        secret:
-          secretName: secrets
-          items:
-          - key: revprox-cert 
-            path: revprox_cert 
-          - key: revprox-key 
-            path: revprox_key 
 status: {}

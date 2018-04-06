@@ -18,23 +18,11 @@ spec:
         io.kompose.service: appserver
     spec:
       containers:
-#      - image: atsea_app
-      - image: 368863656547.dkr.ecr.eu-central-1.amazonaws.com/appserver:TAG
+      - image: atsea_app
         name: appserver
         ports:
         - containerPort: 8080
         - containerPort: 5005
         resources: {}
-        volumeMounts:                       
-        - mountPath: /run/secrets
-          name: secrets-mount
-          # readOnly: true
       restartPolicy: Always
-      volumes:
-      - name: secrets-mount
-        secret:
-          secretName: secrets
-          items:
-          - key: postgres-password
-            path: postgres_password
 status: {}

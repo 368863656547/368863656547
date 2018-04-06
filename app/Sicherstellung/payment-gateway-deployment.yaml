@@ -18,20 +18,8 @@ spec:
         io.kompose.service: payment-gateway
     spec:
       containers:
-#      - image: payment-gateway
-      - image: 368863656547.dkr.ecr.eu-central-1.amazonaws.com/payment-gateway:TAG
+      - image: payment-gateway
         name: payment-gateway
         resources: {}
-        volumeMounts:                       
-        - mountPath: /run/secrets
-          name: secrets-mount
-          # readOnly: true
       restartPolicy: Always
-      volumes:
-      - name: secrets-mount
-        secret:
-          secretName: secrets
-          items:
-          - key: payment-token
-            path: payment_token
 status: {}

@@ -1,0 +1,641 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "jMeter Template",
+  "Parameters": {
+     "jMeterNodeKey": {
+    "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+    "Type": "AWS::EC2::KeyPair::KeyName",
+    "ConstraintDescription": "must be the name of an existing EC2 KeyPair.",
+    "Default": "jMeterNode"
+	 },
+     "jMeterMasterKey": {
+    "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+    "Type": "AWS::EC2::KeyPair::KeyName",
+    "ConstraintDescription": "must be the name of an existing EC2 KeyPair.",
+    "Default": "jMeterMaster"
+	 }
+  },
+  "Resources": {
+    "vpcd8887cb3": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "172.31.0.0/16",
+        "InstanceTenancy": "default",
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true"
+      }
+    },
+    "subnet84823aefpublic": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "172.31.16.0/20",
+        "AvailabilityZone": "eu-central-1a",
+        "VpcId": {
+          "Ref": "vpcd8887cb3"
+        }
+      }
+    },
+    "subnet84823afeprivate": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "172.31.32.0/20",
+        "AvailabilityZone": "eu-central-1a",
+        "VpcId": {
+          "Ref": "vpcd8887cb3"
+        }
+      }
+    },
+    "igwf9388491": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+      }
+    },
+    "dopt4fab4d24": {
+      "Type": "AWS::EC2::DHCPOptions",
+      "Properties": {
+        "DomainName": "eu-central-1.compute.internal",
+        "DomainNameServers": [
+          "AmazonProvidedDNS"
+        ]
+      }
+    },
+    "acldb8f39b0": {
+      "Type": "AWS::EC2::NetworkAcl",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcd8887cb3"
+        }
+      }
+    },
+    "publicroutetable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcd8887cb3"
+        }
+      }
+    },
+    "privateroutetable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcd8887cb3"
+        }
+      }
+    },
+    "mastereip": {
+      "Type": "AWS::EC2::EIP",
+      "DependsOn": [
+        "gw1"
+      ],
+      "Properties": {
+        "Domain": "vpc"
+      }
+    },
+    "nateip": {
+      "Type": "AWS::EC2::EIP",
+      "DependsOn": [
+        "gw1"
+      ],
+      "Properties": {
+        "Domain": "vpc"
+      }
+    },
+    "node1": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "DisableApiTermination": "false",
+        "InstanceInitiatedShutdownBehavior": "stop",
+        "ImageId": "ami-5055cd3f",
+        "InstanceType": "t2.medium",
+        "KeyName": "jMeterNode",
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": ["", [
+            "#!/bin/bash\n",
+            "apt-get -y update\n",
+            "add-apt-repository -y ppa:openjdk-r/ppa\n",
+            "apt-get -y update\n",
+            "apt-get -y install openjdk-8-jdk\n",
+            "sleep 15\n",
+            "wget http://redrockdigimark.com/apachemirror/jmeter/binaries/apache-jmeter-4.0.tgz\n",
+            "tar -xf apache-jmeter-4.0.tgz\n",
+            "apt-get -y install python-setuptools\n",
+            "mkdir aws-cfn-bootstrap-latest\n",
+            "curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C aws-cfn-bootstrap-latest --strip-components 1\n",
+            "easy_install aws-cfn-bootstrap-latest\n",
+            "sed -i 's/#server_port=1099/server_port=24001/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "sed -i 's/#server.rmi.localport=4000/server.rmi.localport=26001/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "sed -i 's/#server.rmi.ssl.disable=false/server.rmi.ssl.disable=true/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "/apache-jmeter-4.0/bin/./jmeter-server -Djava.rmi.server.hostname=127.0.0.1 > /dev/null 2>&1 &"
+            ]]
+          }
+        },
+        "Monitoring": "false",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "jMeter Node 1"
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+            "DeleteOnTermination": "true",
+            "Description": "Primary network interface",
+            "DeviceIndex": 0,
+            "SubnetId": {
+              "Ref": "subnet84823afeprivate"
+            },
+            "PrivateIpAddresses": [
+              {
+                "PrivateIpAddress": "172.31.32.143",
+                "Primary": "true"
+              }
+            ],
+            "GroupSet": [
+              {
+                "Ref": "sgjMeter"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "node2": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "DisableApiTermination": "false",
+        "InstanceInitiatedShutdownBehavior": "stop",
+        "ImageId": "ami-5055cd3f",
+        "InstanceType": "t2.medium",
+        "KeyName": "jMeterNode",
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": ["", [
+            "#!/bin/bash\n",
+            "apt-get -y update\n",
+            "add-apt-repository -y ppa:openjdk-r/ppa\n",
+            "apt-get -y update\n",
+            "apt-get -y install openjdk-8-jdk\n",
+            "sleep 20\n",
+            "wget http://redrockdigimark.com/apachemirror/jmeter/binaries/apache-jmeter-4.0.tgz\n",
+            "tar -xf apache-jmeter-4.0.tgz\n",
+            "apt-get -y install python-setuptools\n",
+            "mkdir aws-cfn-bootstrap-latest\n",
+            "curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C aws-cfn-bootstrap-latest --strip-components 1\n",
+            "easy_install aws-cfn-bootstrap-latest\n",
+            "sed -i 's/#server_port=1099/server_port=24002/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "sed -i 's/#server.rmi.localport=4000/server.rmi.localport=26002/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "sed -i 's/#server.rmi.ssl.disable=false/server.rmi.ssl.disable=true/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "/apache-jmeter-4.0/bin/./jmeter-server -Djava.rmi.server.hostname=127.0.0.1 > /dev/null 2>&1 &"
+            ]]
+          }
+        },
+        "Monitoring": "false",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "jMeter Node 2"
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+            "DeleteOnTermination": "true",
+            "Description": "Primary network interface",
+            "DeviceIndex": 0,
+            "SubnetId": {
+              "Ref": "subnet84823afeprivate"
+            },
+            "PrivateIpAddresses": [
+              {
+                "PrivateIpAddress": "172.31.32.144",
+                "Primary": "true"
+              }
+            ],
+            "GroupSet": [
+              {
+                "Ref": "sgjMeter"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "node3": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "DisableApiTermination": "false",
+        "InstanceInitiatedShutdownBehavior": "stop",
+        "ImageId": "ami-5055cd3f",
+        "InstanceType": "t2.medium",
+        "KeyName": "jMeterNode",
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": ["", [
+            "#!/bin/bash\n",
+            "apt-get -y update\n",
+            "add-apt-repository -y ppa:openjdk-r/ppa\n",
+            "apt-get -y update\n",
+            "apt-get -y install openjdk-8-jdk\n",
+            "sleep 25\n",
+            "wget http://redrockdigimark.com/apachemirror/jmeter/binaries/apache-jmeter-4.0.tgz\n",
+            "tar -xf apache-jmeter-4.0.tgz\n",
+            "apt-get -y install python-setuptools\n",
+            "mkdir aws-cfn-bootstrap-latest\n",
+            "curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C aws-cfn-bootstrap-latest --strip-components 1\n",
+            "easy_install aws-cfn-bootstrap-latest\n",
+            "sed -i 's/#server_port=1099/server_port=24003/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "sed -i 's/#server.rmi.localport=4000/server.rmi.localport=26003/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "sed -i 's/#server.rmi.ssl.disable=false/server.rmi.ssl.disable=true/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "/apache-jmeter-4.0/bin/./jmeter-server -Djava.rmi.server.hostname=127.0.0.1 > /dev/null 2>&1 &"
+            ]]
+          }
+        },
+        "Monitoring": "false",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "jMeter Node 3"
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+            "DeleteOnTermination": "true",
+            "Description": "Primary network interface",
+            "DeviceIndex": 0,
+            "SubnetId": {
+              "Ref": "subnet84823afeprivate"
+            },
+            "PrivateIpAddresses": [
+              {
+                "PrivateIpAddress": "172.31.32.145",
+                "Primary": "true"
+              }
+            ],
+            "GroupSet": [
+              {
+                "Ref": "sgjMeter"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "node4": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "DisableApiTermination": "false",
+        "InstanceInitiatedShutdownBehavior": "stop",
+        "ImageId": "ami-5055cd3f",
+        "InstanceType": "t2.medium",
+        "KeyName": "jMeterNode",
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": ["", [
+            "#!/bin/bash\n",
+            "apt-get -y update\n",
+            "add-apt-repository -y ppa:openjdk-r/ppa\n",
+            "apt-get -y update\n",
+            "apt-get -y install openjdk-8-jdk\n",
+            "sleep 30\n",
+            "wget http://redrockdigimark.com/apachemirror/jmeter/binaries/apache-jmeter-4.0.tgz\n",
+            "tar -xf apache-jmeter-4.0.tgz\n",
+            "apt-get -y install python-setuptools\n",
+            "mkdir aws-cfn-bootstrap-latest\n",
+            "curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C aws-cfn-bootstrap-latest --strip-components 1\n",
+            "easy_install aws-cfn-bootstrap-latest\n",
+            "sed -i 's/#server_port=1099/server_port=24004/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "sed -i 's/#server.rmi.localport=4000/server.rmi.localport=26004/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "sed -i 's/#server.rmi.ssl.disable=false/server.rmi.ssl.disable=true/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "/apache-jmeter-4.0/bin/./jmeter-server -Djava.rmi.server.hostname=127.0.0.1 > /dev/null 2>&1 &"
+            ]]
+          }
+        },
+        "Monitoring": "false",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "jMeter Node 4"
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+            "DeleteOnTermination": "true",
+            "Description": "Primary network interface",
+            "DeviceIndex": 0,
+            "SubnetId": {
+              "Ref": "subnet84823afeprivate"
+            },
+            "PrivateIpAddresses": [
+              {
+                "PrivateIpAddress": "172.31.32.146",
+                "Primary": "true"
+              }
+            ],
+            "GroupSet": [
+              {
+                "Ref": "sgjMeter"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "master": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "DisableApiTermination": "false",
+        "InstanceInitiatedShutdownBehavior": "stop",
+        "ImageId": "ami-5055cd3f",
+        "InstanceType": "t2.small",
+        "KeyName": "jMeterMaster",
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": ["", [
+            "#!/bin/bash\n",
+            "apt-get -y update\n",
+            "add-apt-repository -y ppa:openjdk-r/ppa\n",
+            "apt-get -y update\n",
+            "apt-get -y install openjdk-8-jdk\n",
+            "sleep 10\n",
+            "wget http://redrockdigimark.com/apachemirror/jmeter/binaries/apache-jmeter-4.0.tgz\n",
+            "tar -xf apache-jmeter-4.0.tgz\n",
+            "apt-get -y install awscli\n",
+            "echo '-----BEGIN RSA PRIVATE KEY-----' >> /tmp/jMeterNode.pem\n",
+            "echo 'MIIEpAIBAAKCAQEAnb/4/Li+S8XYgZab7oC4Ke6inl4jc0XhkcjV7TXpqFWwA6k/Z6Xxecu1xfGG' >> /tmp/jMeterNode.pem\n",
+            "echo 'yPu7PQzfGCOngqwSgijwssO0cFGtqOhcSaSdufadpSA1HLL6Sb4dxg4mjbj/oYKXUJf1nUoaM80v' >> /tmp/jMeterNode.pem\n",
+            "echo 'BkIiH1T8HMoT5gqh5CnIA9bcJLEBJ+Eu9W4t1fkZjz9QztnNnjhVWxmKLOwNYSlsby9gSrk/IeR4' >> /tmp/jMeterNode.pem\n",
+            "echo 'kkQB5uvle8Wymzki2htgKOz8Ud5F2wc8F4WsMqyQL6NCSrTLhJVRaoYmsIY/ZttpXbKjvbGtTZ2V' >> /tmp/jMeterNode.pem\n",
+            "echo 'dS/wp830u3Uni649oEdzOpk7vvtipd18YUG75f9/pNcnagCxKh4o6QIDAQABAoIBAC0WECjS+HiZ' >> /tmp/jMeterNode.pem\n",
+            "echo 'rF6lWB3bpkc90DapO0KYB3duSk5I6WZWTz9MoTWThSfFZEeV12scH5C8XAr/LcI4QfX3k4vUSX8M' >> /tmp/jMeterNode.pem\n",
+            "echo 'qTCscKwPo5Dh/n6SbPut38Ex2DqiErzQ0icsNuku9WEmK8UAcN8+CZig5omn6/YEte6LToJiZ3sJ' >> /tmp/jMeterNode.pem\n",
+            "echo 'KAZo4s38YNf/R8bcDa2YJv+yx8tAIw7rPmKYgcHLYaOPs978MgiRgFeS4+hIaG77WB9IHUSInYmI' >> /tmp/jMeterNode.pem\n",
+            "echo 'tyJpKyJkb1EXFMIzdH535ENr0RmgXyhZ4aeHloU9i1o7I4mpj5/WP2jPcpOa9d/BIJRAunCGrBYP' >> /tmp/jMeterNode.pem\n",
+            "echo 'Cq9Vw7HXBjJ9VoMjEPzx6e28fwECgYEA+zqGhhEidSRRmNFuZlFOJP4UtcrWPL8K+SYgjoDL2SHh' >> /tmp/jMeterNode.pem\n",
+            "echo 'LTWw9FTl+Ryj5FehN/ry5CBdtNOOK6z2IarYtzavNE9bk74MlX5C4vL9/a9m9FYWNIBq3w2/JSBV' >> /tmp/jMeterNode.pem\n",
+            "echo 'M3RwKXaUmINSQYwC7iBnVSJ7iqG4WSnrzqks5Lb6aY0TPKlepUkCgYEAoL70BWgcYtNitYT/hBsV' >> /tmp/jMeterNode.pem\n",
+            "echo 'nhQlIa+f1zddCKYaHL2v4JR8yTl5p3S+xuIKx9C389NPePD52oeSPsuFhu3Offj2zk62ioMq39kN' >> /tmp/jMeterNode.pem\n",
+            "echo 'zTHr4/DCEoheZB4KVN+7iuUggbTkaRVSW9pbBf8QzrlVhdZyTZp92dCr7wxdfbdEg839nIZ0hqEC' >> /tmp/jMeterNode.pem\n",
+            "echo 'gYBv0eLidWny3dF7xWvwGqw/ht/M8pVcwGOv9ap0Axu4b338U3OJrOgXcwn3rpFRi17k7wsGW0ti' >> /tmp/jMeterNode.pem\n",
+            "echo 'YT/ESHjhQ3PEQrYuEl8jgulefm1SpumaQ17qy2XGFiZH7hY+KstpiSAmqfzIs/rx5nZXzFtUnxqg' >> /tmp/jMeterNode.pem\n",
+            "echo 'hSox99bFjjPzGxm+3FwGEQKBgQCXqxR7dXwzEth0BQVCFHwVJ1TRr+/VFPvHCVJiA+hKsk/7XSuY' >> /tmp/jMeterNode.pem\n",
+            "echo 'AONwrB8X4atvd9XoexaERp6KeWWHpiHLYnkct9AsaQ6vHxGSpqO38pZq/hhxxpZg9qjxqLc/KvrI' >> /tmp/jMeterNode.pem\n",
+            "echo '28FVwXVY9w1YwC4dlfVLm5VbSzSu3K/pyl3vLxE3+vU/gQKBgQCzmVW9sv7CoVcJuyOVlBG+GRPb' >> /tmp/jMeterNode.pem\n",
+            "echo 'XF+O0dCZ0XAucEWSEjfNtvQXpuQ3aNmZtoajyuOMNIg6QfuelX4ry4133uEXf2D7soaNG1KHpPqq' >> /tmp/jMeterNode.pem\n",
+            "echo 'iy99GHACPUgijP+ZUrQuIPAz0mNYN/72pIIT09iHiXiMHQKE0tqYgk8kShlSu0NaS3nYoQ==' >> /tmp/jMeterNode.pem\n",
+            "echo '-----END RSA PRIVATE KEY-----' >> /tmp/jMeterNode.pem\n",            "cd /tmp\n",
+            "chmod 400 jMeterNode.pem\n",
+            "sleep 30\n",
+            "chown ubuntu:ubuntu /apache-jmeter-4.0/ -R\n",
+            "ssh -i '/tmp/jMeterNode.pem' -o StrictHostKeyChecking=no -L 24001:127.0.0.1:24001 -R 25000:127.0.0.1:25000 -L 26001:127.0.0.1:26001 -N -f ubuntu@",
+            { "Fn::GetAtt" : [ "node1", "PrivateIp" ] },
+            "\n",
+            "ssh -i '/tmp/jMeterNode.pem' -o StrictHostKeyChecking=no -L 24002:127.0.0.1:24002 -R 25000:127.0.0.1:25000 -L 26002:127.0.0.1:26002 -N -f ubuntu@",
+            { "Fn::GetAtt" : [ "node2", "PrivateIp" ] },
+            "\n",
+            "ssh -i '/tmp/jMeterNode.pem' -o StrictHostKeyChecking=no -L 24003:127.0.0.1:24003 -R 25000:127.0.0.1:25000 -L 26003:127.0.0.1:26003 -N -f ubuntu@",
+            { "Fn::GetAtt" : [ "node3", "PrivateIp" ] },
+            "\n",
+            "ssh -i '/tmp/jMeterNode.pem' -o StrictHostKeyChecking=no -L 24004:127.0.0.1:24004 -R 25000:127.0.0.1:25000 -L 26004:127.0.0.1:26004 -N -f ubuntu@",
+            { "Fn::GetAtt" : [ "node4", "PrivateIp" ] },
+            "\n",
+            "sed -i 's/remote_hosts=127.0.0.1/remote_hosts=127.0.0.1:24001, 127.0.0.1:24002, 127.0.0.1:24003, 127.0.0.1:24004/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "sed -i 's/#client.rmi.localport=0/client.rmi.localport=25000/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "sed -i 's/#mode=Statistical/mode=Statistical/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "sed -i 's/#server.rmi.create=false/server.rmi.create=false/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "sed -i 's/#server.rmi.ssl.disable=false/server.rmi.ssl.disable=true/' /apache-jmeter-4.0/bin/jmeter.properties\n",
+            "echo '    ServerAliveCountMax 3' >> /etc/ssh/ssh_config\n",
+            "echo '    ServerAliveInterval 60' >> /etc/ssh/ssh_config\n"
+            ]]
+          }
+        },
+        "Monitoring": "false",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "jMeterMaster"
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+            "DeleteOnTermination": "true",
+            "Description": "Primary network interface",
+            "DeviceIndex": 0,
+            "SubnetId": {
+              "Ref": "subnet84823aefpublic"
+            },
+            "PrivateIpAddresses": [
+              {
+                "PrivateIpAddress": "172.31.30.142",
+                "Primary": "true"
+              }
+            ],
+            "GroupSet": [
+              {
+                "Ref": "sgjMeter"
+              }
+            ]
+          }
+        ]
+      },
+  "DependsOn": ["node1","node2","node3","node4"]
+    },
+    "sgjMeter": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "jMeter SG",
+        "VpcId": {
+          "Ref": "vpcd8887cb3"
+        }
+      }
+    },
+    "acl1": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "CidrBlock": "0.0.0.0/0",
+        "Egress": "true",
+        "Protocol": "-1",
+        "RuleAction": "allow",
+        "RuleNumber": "100",
+        "NetworkAclId": {
+          "Ref": "acldb8f39b0"
+        }
+      }
+    },
+    "acl2": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "CidrBlock": "0.0.0.0/0",
+        "Egress": "false",
+        "Protocol": "-1",
+        "RuleAction": "allow",
+        "RuleNumber": "100",
+        "NetworkAclId": {
+          "Ref": "acldb8f39b0"
+        }
+      }
+    },
+    "subnetacl2": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "acldb8f39b0"
+        },
+        "SubnetId": {
+          "Ref": "subnet84823afeprivate"
+        }
+      }
+    },
+    "subnetacl3": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "acldb8f39b0"
+        },
+        "SubnetId": {
+          "Ref": "subnet84823aefpublic"
+        }
+      }
+    },
+    "gw1": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcd8887cb3"
+        },
+        "InternetGatewayId": {
+          "Ref": "igwf9388491"
+        }
+      }
+    },
+    "publicroute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "publicroutetable"
+        },
+        "GatewayId": {
+          "Ref": "igwf9388491"
+        }
+      },
+      "DependsOn": "gw1"
+    },
+    "privateroute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "privateroutetable"
+        },
+        "NatGatewayId": {
+          "Ref": "natgateway"
+        }
+      }
+    },
+    "PublicSubnetRouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+            "Ref": "subnet84823aefpublic"
+        },
+        "RouteTableId": {
+            "Ref": "publicroutetable"
+        }
+      }
+    },
+    "PrivateSubnetRouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+            "Ref": "subnet84823afeprivate"
+        },
+        "RouteTableId": {
+            "Ref": "privateroutetable"
+        }
+      }
+    },
+    "dhcpassoc1": {
+      "Type": "AWS::EC2::VPCDHCPOptionsAssociation",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcd8887cb3"
+        },
+        "DhcpOptionsId": {
+          "Ref": "dopt4fab4d24"
+        }
+      }
+    },
+    "mastereipassoc": {
+      "Type": "AWS::EC2::EIPAssociation",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "mastereip",
+            "AllocationId"
+          ]
+        },
+        "InstanceId": {
+          "Ref": "master"
+        }
+      }
+    },
+    "ingress1": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgjMeter"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "0",
+        "ToPort": "65535",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "ingress2": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgjMeter"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress1": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgjMeter"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "0",
+        "ToPort": "65535",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress2": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgjMeter"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "natgateway": {
+      "Type" : "AWS::EC2::NatGateway",
+      "Properties" : {
+        "AllocationId" : { "Fn::GetAtt": ["nateip", "AllocationId"] },
+        "SubnetId" : {
+          "Ref": "subnet84823aefpublic"
+        }
+    }
+  }
+  }
+}

@@ -25,22 +25,10 @@ spec:
           value: /run/secrets/postgres_password
         - name: POSTGRES_USER
           value: gordonuser
-#        image: atsea_db
-        image: 368863656547.dkr.ecr.eu-central-1.amazonaws.com/database:TAG
+        image: atsea_db
         name: database
         ports:
         - containerPort: 5432
         resources: {}
-        volumeMounts:                       
-        - mountPath: /run/secrets
-          name: secrets-mount
-          # readOnly: true
       restartPolicy: Always
-      volumes:
-      - name: secrets-mount
-        secret:
-          secretName: secrets
-          items:
-          - key: postgres-password
-            path: postgres_password
 status: {}
