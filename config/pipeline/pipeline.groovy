@@ -54,7 +54,7 @@ agent none
 							sh script: """
 								cd app/app
 								mvn clean
-								mvn package
+								mvn package -Dmaven.test.skip=true
 							"""
 					}
 				}	
