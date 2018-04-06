@@ -81,6 +81,11 @@ agent none
 					archiveArtifacts artifacts: 'app/app/target/*.jar', fingerprint: true
 				}
 			}
+			post {
+				failure {
+					junit 'app/app/target/surefire-reports/*.xml'
+				}
+			}
 		}
       
 
