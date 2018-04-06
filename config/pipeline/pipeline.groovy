@@ -115,6 +115,7 @@ agent none
 			steps {
 				echo 'Create Docker File ..'
 				script{
+					sh 'cd app/app && docker-compose build'
 					sh 'eval `aws ecr get-login --no-include-email --region eu-central-1`'
 					sh 'docker tag app_payment_gateway:latest 368863656547.dkr.ecr.eu-central-1.amazonaws.com/payment-gateway:'+ VERSION +''
 					sh 'docker tag atsea_app:latest 368863656547.dkr.ecr.eu-central-1.amazonaws.com/appserver:'+ VERSION +''
