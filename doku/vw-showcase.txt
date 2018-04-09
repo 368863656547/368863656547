@@ -1,0 +1,207 @@
+1. EC2-Instanz angelegt, auf der ich den Cluster (bzw. das CF template) erzeugen kann (t2-micro reicht).
+Mit Role AdministratorAccess ausgestattet: Von dort aus können beliebige AWS.-kommandos ohne weitere Autorisierung abgesetzt werden.
+
+Dort folgende Befehle:
+
+# aws configure
+echo "[default]" > ./.aws/config
+echo "output = json" > ./.aws/config
+echo "region = eu-central-1" > ./.aws/config
+# Credentials sind nicht nötig (siehe Anmerkung ganz oben)
+
+# installieren von kops
+wget -O kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+chmod +x ./kops
+sudo mv ./kops /usr/local/bin/
+
+# installieren von kubectl
+wget -O kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
+
+# Aufsetzen von Docker
+sudo yum update
+sudo yum -y install docker
+sudo service docker start
+sudo usermod -a -G docker ec2-user
+# um ohne sudo auszukommen, muss man sich neu anmelden: exit + Session neu verbinden
+
+# Aufsetzen von Docker-compose
+curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-Linux-x86_64 > ./docker-compose
+sudo mv ./docker-compose /usr/bin/docker-compose
+sudo chmod +x /usr/bin/docker-compose
+
+# Installieren von Kompose
+curl -L https://github.com/kubernetes/kompose/releases/download/v1.10.0/kompose-linux-amd64 -o kompose
+chmod +x kompose
+sudo mv ./kompose /usr/local/bin/kompose
+
+
+# s3 bucket für state-store anlegen (mit eingeschalteter Verionierung)
+export S3_STATE_STORE=de.materna.k8s-showcase.kops-state-store
+aws s3api create-bucket --bucket ${S3_STATE_STORE} --region eu-central-1 --create-bucket-configuration LocationConstraint=eu-central-1
+aws s3api put-bucket-versioning --bucket ${S3_STATE_STORE} --versioning-configuration Status=Enabled
+
+# Mit CF den Cluster zu erzeugen hat den Nachteil, dass KOPS ihn anscheinend nicht seinen state-store einträgt und er damit nicht administrierbar ist.
+# Außerdem geht das Aufsetzen und Löschen mit KOPS schneller als das mit CF!
+
+
+export AWS_AVAILABILITY_ZONES=eu-central-1a,eu-central-1b,eu-central-1c
+export AWS_CLUSTER_IMAGE=kope.io/k8s-1.8-debian-stretch-amd64-hvm-ebs-2018-02-08
+export AWS_CLUSTER_NAME=k8s-showcase.cluster.k8s.local
+export AWS_MASTER_SIZE=t2.medium
+export AWS_NODE_SIZE=t2.small
+export AWS_PROFILE=default
+export KOPS_STATE_STORE=s3://de.materna.k8s-showcase.kops-state-store
+# dabei ist zu beachten, dass das Bucket u.U. anders heißt. Die Variable wird aber von KOPS bei allen möglichen Sachen verwendet, daher sollte sie schon da sein.
+
+# wenn man den Cluster direkt ausführen will (empfohlen):
+kops create cluster ${AWS_CLUSTER_NAME} --image=${AWS_CLUSTER_IMAGE} --zones=${AWS_AVAILABILITY_ZONES} --master-size=${AWS_MASTER_SIZE} --node-size=${AWS_NODE_SIZE} --networking=flannel --ssh-access="139.2.0.0/16" --ssh-public-key="~/.ssh/authorized_keys" --state=${KOPS_STATE_STORE} --cloud aws --topology private --yes
+
+# wenn man stattdessen ein CF-template für den Cluster erzeugen will:
+kops create cluster ${AWS_CLUSTER_NAME} --image=${AWS_CLUSTER_IMAGE} --zones=${AWS_AVAILABILITY_ZONES} --master-size=${AWS_MASTER_SIZE} --node-size=${AWS_NODE_SIZE} --networking=flannel --ssh-access="139.2.0.0/16" --ssh-public-key="~/.ssh/authorized_keys" --topology private --target cloudformation
+
+# ausführen des CF-Stacks:
+sudo aws cloudformation create-stack --capabilities CAPABILITY_NAMED_IAM --stack-name kubernetes-k8s-showcase-cluster-k8s-local --template-body file://out/cloudformation/kubernetes.json
+# das hatte das Problem, dass kops den von CF erstellten Cluster nicht kannte. Möglicherweise kein gangbarer Weg.
+
+# Problem kann sein, dass man den Cluster evtl. im selben VPC wie die KOPS-Instanz erzeugen will, damit die Nodes auf die Images zugreifen können.
+# Um den eigenen VPC zu ermitteln:
+# aws ec2 describe-instances --instance-ids $(curl -fsLl http://169.254.169.254/latest/meta-data/instance-id) --query 'Reservations[].Instances[].VpcId'|grep vpc|sed -e 's/[ \t\"]*//g'
+# das muss man dann als Parameter --vpc bei kops create cluster angeben.
+# Alternativ kann man sich auch einen Bastion Host erzeugen lassen mit --bastion
+
+
+
+# das zu deployende Projekt herbeikopieren
+# auspacken
+unzip atsea-sample-shop-app-master.zip
+
+cd atsea-sample-shop-app-master
+
+# Docker secrets anlegen (nur nötig wenn die Anwendung in Docker gestartet werden soll)
+mkdir certs
+openssl req -newkey rsa:4096 -nodes -sha256 -keyout certs\domain.key -x509 -days 365 -out certs\domain.crt
+# das vorangehende Kommando will einige Eingaben haben
+docker swarm init
+# ohne das vorangehende gets nicht
+docker secret create revprox_cert certs/domain.crt
+docker secret create revprox_key certs/domain.key
+docker secret create postgres_password certs/domain.key
+echo staging | docker secret create payment_token -
+
+# secrets in Kubernetes bereitstellen
+
+kubectl create secret generic secrets --from-file=revprox-cert=certs/domain.crt --from-file=revprox-key=certs/domain.key --from-literal=postgres-password="gordonpass" --from-literal=payment-token="staging"
+# (vergisst man das, bleiben die Container in "ContainerCreating" hängen, bis man das nachholt)
+
+# löschen (vor Änderung)
+kubectl delete secret secrets
+
+# Docker container bauen
+docker-compose up --build
+# das setzt ggf. auch docker swarm init voraus
+# oder
+docker-composer build
+# das startet das Szenario nicht
+
+# Bauen eines Kubernetes Deployments aus Docker-compose mit Kompose
+# Leider kann Kompose die Docker-compose Syntax v.3.1 nicht (nur 1.0, 2.0, 3.0)
+# daher müssen einige Teile auskommentiert werden (alles was mit secrets zu tun hat - siehe Datei docker-compose-kubernetes.yml)
+# es fallen 8 Dateien heraus, die wohl noch nachbearbeitet werden müssen
+# wir verschieben sie in ein eigenes Unterverzeichnis (kubedeployment), damit man die beim Kubernetes-Deployment nicht alle einzeln angeben muss:
+mkdir kubedeployment
+mv *-service.yaml kubedeployment
+mv *-deployment.yaml kubedeployment
+
+# Kubernetes speichert die Images in einem Repository (pro Image, mit ggf. verschiedenen Versionen)
+# Wir verwenden AWS ECR dafür, die Repos wurden über die Web-Oberfläche angelegt.
+# Repositories: payment-gateway database reverse-proxy (d.h. alles, was ein Image hat).
+
+# Einrichten des lokalen Docker-Repos:
+docker run -d -p 5000:5000 --restart=always --name registry registry:2
+# das scheint auch die Images zu enthalten, die man schon vorher angelegt hat!?
+
+
+# Pushen der Images:
+# Zuvor ggf. in ECS die Repos anlegen.
+## Anmelden am Repository
+eval `aws ecr get-login --no-include-email --region eu-central-1`
+# Die Image-Namen im lokalen Repo der KOPS-Instanz bekommt man mit: docker images
+
+## Tag ggf. ändern in latest
+export DOCKERTAG=TAG
+docker tag atseasampleshopappmaster_reverse_proxy:latest 368863656547.dkr.ecr.eu-central-1.amazonaws.com/reverse-proxy:${DOCKERTAG}
+docker push 368863656547.dkr.ecr.eu-central-1.amazonaws.com/reverse-proxy:${DOCKERTAG}
+
+docker tag atseasampleshopappmaster_payment_gateway:latest 368863656547.dkr.ecr.eu-central-1.amazonaws.com/payment-gateway:${DOCKERTAG}
+docker push 368863656547.dkr.ecr.eu-central-1.amazonaws.com/payment-gateway:${DOCKERTAG}
+
+docker tag atsea_db:latest 368863656547.dkr.ecr.eu-central-1.amazonaws.com/database:${DOCKERTAG}
+docker push 368863656547.dkr.ecr.eu-central-1.amazonaws.com/database:${DOCKERTAG}
+
+docker tag atsea_app:latest 368863656547.dkr.ecr.eu-central-1.amazonaws.com/appserver:${DOCKERTAG}
+docker push 368863656547.dkr.ecr.eu-central-1.amazonaws.com/appserver:${DOCKERTAG}
+
+
+# Erzeugen des Kubernetes-Deployments (Images in ./kubedeployment)
+kubectl create -f ./kubedeployment
+
+
+
+# Zertifikate:
+# Anlegen im Certificate Manager: server.crt (-----BEGIN CERTIFICATE-----) nach body, private key nach priv. key.
+
+
+# Aufsetzen des Lasttests (von Windows aus):
+
+aws cloudformation create-stack --capabilities CAPABILITY_NAMED_IAM --stack-name Lasttest --template-body file://jMeterCluster.json
+
+Schritte, um den Lasttest auszuführen:
+
+Im Atseashop einen Benutzer "hdreier" mit Passwort "xyz anlegen",
+Atseashop.jmx bearbeiten und die URL gegen die aktuelle des Loadbalancers austauschen,
+lokal mit jmeter öffnen und die Parameter anpassen (Ramp-up time etc.)
+in das /tmp-Verzeichnis des jMeterMasters kopieren,
+Lasttest starten:
+
+# mit logs
+/apache-jmeter-4.0/bin/./jmeter -n -t /tmp/Atseashop.jmx -r -e -o /tmp/output -l /tmp/atsea.log
+
+#ohne logs
+/apache-jmeter-4.0/bin/./jmeter -n -t /tmp/Atseashop.jmx -r
+
+
+nachdem man die Ergebnisse gesichert hat, Verzeichnis / Logdatei löschen, bevor man neu startet.
+
+--------------
+
+Autoscaling bearbeiten:
+kops edit ig nodes
+# maxSize z.B. auf 4 setzen
+
+kops update cluster ${AWS_CLUSTER_NAME}
+
+# Next, we need to update the manifest for the Cluster Autoscaler add-on with the minimum (2) & maximum (4) number of nodes that the AWS autoscaling group will allow,
+# the name of the AWS autoscaling group and the AWS region:
+
+export MIN_NODES="2"
+export MAX_NODES="4"
+sed -i -e "s|--nodes=.*|--nodes=${MIN_NODES}:${MAX_NODES}:nodes.${AWS_CLUSTER_NAME}|g" \
+    ./kubernetes/cluster-autoscaler/cluster-autoscaler-deploy.yaml
+sed -i -e "s|value: .*|value: ${AWS_REGION}|g" \
+    ./kubernetes/cluster-autoscaler/cluster-autoscaler-deploy.yaml
+
+--------------
+
+# Löschen des Deployments:
+kubectl delete -f ./kubedeployment
+
+# Löschen des Clusters
+kops delete cluster ${AWS_CLUSTER_NAME} --yes
+
+
+===================
+
+TODO: Herausfinden, warum das Datenbankpasswort "gordonpass" sein muss (irgendwas setzt das DB-Passwort offenbar noch anders als wir wollen)
+TODO: Herausfinden, ob wir ein TLS Zertifikat und eine Subdomain bekommen können - oder ob es eine Materna-Subdomain bei AWS schon gibt.
