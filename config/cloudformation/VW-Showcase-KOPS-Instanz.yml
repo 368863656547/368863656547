@@ -352,6 +352,7 @@ Resources:
               export AWS_NODE_SIZE=t2.medium
               export AWS_PROFILE=default
               export KOPS_STATE_STORE=kops-state-store-`tr -dc 'a-f0-9' < /dev/urandom | dd bs=1 count=32 2>/dev/null`
+              export AWS_SSH_ACCESS=139.2.0.0/16 
             - |
               # Environment-Variablen permanent verfügbar machen
               echo "export AWS_REGION=${AWS_REGION}" >> /home/ec2-user/.bashrc
@@ -362,6 +363,7 @@ Resources:
               echo "export AWS_NODE_SIZE=${AWS_NODE_SIZE}" >> /home/ec2-user/.bashrc
               echo "export AWS_PROFILE=${AWS_PROFILE}" >> /home/ec2-user/.bashrc
               echo "export KOPS_STATE_STORE=${KOPS_STATE_STORE}" >> /home/ec2-user/.bashrc
+              echo "export AWS_SSH_ACCESS=${AWS_SSH_ACCESS}" >> /home/ec2-user/.bashrc
             - | 
               # aws configure
               mkdir /home/ec2-user/.aws
