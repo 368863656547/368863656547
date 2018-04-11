@@ -1,5 +1,26 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: SonarQube Template
+Description: SonarQube and Jenkins Template
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the Elastic Beanstalk hosts
+    Default: ShowcaseKeyPair
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: "[-_ a-zA-Z0-9]*"
+    ConstraintDescription: can contain only alphanumeric characters, spaces, dashes and underscores.
+  SecurityGroupName:
+    Description: Name of an existing SecurityGroup
+    Default: 'sg-0202f16ec9f8b415e'
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+  SubnetIdName:
+    Description: Name of an existing SubnetId
+    Default: 'subnet-1732e96a'
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
 Resources:
   sonarqubeinstance:
     Type: 'AWS::EC2::Instance'
@@ -8,8 +29,8 @@ Resources:
       InstanceInitiatedShutdownBehavior: 'stop'
       ImageId: 'ami-ac442ac3'
       InstanceType: 't2.small'
-      KeyName: 'ShowcaseKeyPair'
-      #!Ref KeyName
+      KeyName: 
+        Ref: KeyName
       UserData: !Base64 
         'Fn::Join':
           - ''
@@ -38,14 +59,61 @@ Resources:
       Monitoring: 'false'
       Tags:
         - Key: Name
-          Value: SonarQubeTest
+          Value: SonarQubeTestt
       NetworkInterfaces:
         - DeleteOnTermination: 'true'
           Description: 'Primary network interface'
           DeviceIndex: 0
-          SubnetId: 'subnet-1732e96a'
+          SubnetId: 
+            Ref: SubnetIdName
+#'subnet-1732e96a'
           PrivateIpAddresses: 
-            - PrivateIpAddress: '172.31.42.219'
+            - PrivateIpAddress: '172.31.42.222'
               Primary: true
           GroupSet: 
-            - 'sg-0202f16ec9f8b415e'
+            - Ref: SecurityGroupName
+#             - 'sg-0202f16ec9f8b415e'
+  jenkinsinstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      DisableApiTermination: 'false'
+      InstanceInitiatedShutdownBehavior: 'stop'
+      ImageId: 'ami-ac442ac3'
+      InstanceType: 't2.medium'
+      KeyName: 
+        Ref: KeyName
+      UserData: !Base64 
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -xe
+            - |
+              sudo yum -y update
+            - |
+              sudo yum install -y java-1.8.0
+            - |
+              sudo yum remove -y java-1.7.0-openjdk
+            - |
+              mkdir /usr/lib/jenkins/
+              cd /usr/lib/jenkins/
+              wget http://mirrors.jenkins.io/war-stable/latest/jenkins.war
+              java -jar jenkins.war --httpPort=8080 >>/dev/null 2>>/dev/null  &
+              sleep 15
+              wget http://127.0.0.1:8080/jnlpJars/jenkins-cli.jar
+      Monitoring: 'false'
+      Tags:
+        - Key: Name
+          Value: JenkinsTestt
+      NetworkInterfaces:
+        - DeleteOnTermination: 'true'
+          Description: 'Primary network interface'
+          DeviceIndex: 0
+          SubnetId: 
+            Ref: SubnetIdName
+#'subnet-1732e96a'
+          PrivateIpAddresses: 
+            - PrivateIpAddress: '172.31.33.223'
+              Primary: true
+          GroupSet: 
+            - Ref: SecurityGroupName
+#            - 'sg-0202f16ec9f8b415e'
