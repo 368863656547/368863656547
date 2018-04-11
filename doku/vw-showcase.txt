@@ -53,13 +53,42 @@ export AWS_MASTER_SIZE=t2.medium
 export AWS_NODE_SIZE=t2.small
 export AWS_PROFILE=default
 export KOPS_STATE_STORE=s3://de.materna.k8s-showcase.kops-state-store
+export AWS_SSH_ACCESS=139.2.0.0/16
 # dabei ist zu beachten, dass das Bucket u.U. anders heißt. Die Variable wird aber von KOPS bei allen möglichen Sachen verwendet, daher sollte sie schon da sein.
 
 # wenn man den Cluster direkt ausführen will (empfohlen):
-kops create cluster ${AWS_CLUSTER_NAME} --image=${AWS_CLUSTER_IMAGE} --zones=${AWS_AVAILABILITY_ZONES} --master-size=${AWS_MASTER_SIZE} --node-size=${AWS_NODE_SIZE} --networking=flannel --ssh-access="139.2.0.0/16" --ssh-public-key="~/.ssh/authorized_keys" --state=${KOPS_STATE_STORE} --cloud aws --topology private --yes
+kops create cluster ${AWS_CLUSTER_NAME} --image=${AWS_CLUSTER_IMAGE} --zones=${AWS_AVAILABILITY_ZONES} --master-size=${AWS_MASTER_SIZE} --node-size=${AWS_NODE_SIZE} --networking=flannel --ssh-access=${AWS_SSH_ACCESS} --ssh-public-key="~/.ssh/authorized_keys" --state=${KOPS_STATE_STORE} --cloud aws --topology private --yes
 
 # wenn man stattdessen ein CF-template für den Cluster erzeugen will:
-kops create cluster ${AWS_CLUSTER_NAME} --image=${AWS_CLUSTER_IMAGE} --zones=${AWS_AVAILABILITY_ZONES} --master-size=${AWS_MASTER_SIZE} --node-size=${AWS_NODE_SIZE} --networking=flannel --ssh-access="139.2.0.0/16" --ssh-public-key="~/.ssh/authorized_keys" --topology private --target cloudformation
+kops create cluster ${AWS_CLUSTER_NAME} --image=${AWS_CLUSTER_IMAGE} --zones=${AWS_AVAILABILITY_ZONES} --master-size=${AWS_MASTER_SIZE} --node-size=${AWS_NODE_SIZE} --networking=flannel --ssh-access=${AWS_SSH_ACCESS} --ssh-public-key="~/.ssh/authorized_keys" --topology private --target cloudformation
+
+oder mit Hilfe einer Dateivorlage (hier können noch viel mehr sed-Zauberei keine AZ angegeben werden):
+cp cluster-template.yaml cluster.yaml
+sed -e s*{{KOPS_STATE_STORE}}*${KOPS_STATE_STORE}*g cluster-template.yaml | \
+sed -e s*{{AWS_CLUSTER_NAME}}*${AWS_CLUSTER_NAME}*g | \
+sed -e s*{{AWS_CLUSTER_IMAGE}}*/${AWS_CLUSTER_IMAGE}*g | \
+sed -e s*{{AWS_MASTER_SIZE}}*${AWS_MASTER_SIZE}*g | \
+sed -e s*{{AWS_NODE_SIZE}}*${AWS_NODE_SIZE}*g | \
+sed -e s*{{AWS_SSH_ACCESS}}*${AWS_SSH_ACCESS}*g > cluster.yaml
+cat cluster.yaml
+kops create -f cluster.yaml
+kops create secret --name k8s-showcase.cluster.k8s.local sshpublickey admin -i ~/.ssh/authorized_keys
+kops update cluster k8s-showcase.cluster.k8s.local --yes
+# aktuell gibt es da noch 1 Problem bei der Erzeugung der Autoscaling-Gruppen
+
+# anpassen des Cluster Autoscaler add-on
+#sed -i -e "s|--nodes=.*|--nodes=${MIN_NODES}:${MAX_NODES}:nodes.${CLUSTER_FULL_NAME}|g" \
+#    ./kubernetes/cluster-autoscaler/cluster-autoscaler-deploy.yaml
+#sed -i -e "s|value: .*|value: ${CLUSTER_AWS_REGION}|g" \
+#    ./kubernetes/cluster-autoscaler/cluster-autoscaler-deploy.yaml
+# anpassen des Cluster-Setups nach dem gleichen Schema...
+
+
+# wenn man will: ausgeben des Skriptes zur Clustererzeugung:
+kops create cluster ${AWS_CLUSTER_NAME} --image=${AWS_CLUSTER_IMAGE} --zones=${AWS_AVAILABILITY_ZONES} --master-size=${AWS_MASTER_SIZE} --node-size=${AWS_NODE_SIZE} --networking=flannel --ssh-access=${AWS_SSH_ACCESS} --ssh-public-key="~/.ssh/authorized_keys" --state=${KOPS_STATE_STORE} --cloud aws --topology private -o yaml > cluster-template.yaml
+
+
+
 
 # ausführen des CF-Stacks:
 sudo aws cloudformation create-stack --capabilities CAPABILITY_NAMED_IAM --stack-name kubernetes-k8s-showcase-cluster-k8s-local --template-body file://out/cloudformation/kubernetes.json
