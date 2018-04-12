@@ -1,0 +1,135 @@
+
+
+--Jenkins Aufsetzen--
+1.EC2 Instance aufsetzen
+-Amazon Linux AMI 2017.09.1 (HVM), SSD Volume Type
+-t2.large
+-IAM role "EC2AdminAccessProfile"
+-Protect against accidental termination
+-Deactivate Delete on Termination
+-Kopieren der *.pem für die KOPS Maschine auf den Jenkins nach ~/xyz.pem. Wird benötigt um das Kubernetes Deployment zu machen.
+                -vi ~/KOPSinstance.pem
+                -ADD:    -----BEGIN RSA PRIVATE KEY-----
+                                               ...
+                                               -----END RSA PRIVATE KEY-----
+                -chmod 400 ~/KOPSinstance.pem
+-AWS configure
+                -sudo su ec2-user 
+                -mkdir ~/.aws
+                -echo "[default]" > ~/.aws/config
+                -echo "output = json" >> ~/.aws/config
+                -echo "region = eu-central-1" >> ~/.aws/config
+
+2. Update JDK to 1.8
+-sudo yum -y install java-1.8.0
+-sudo yum -y remove java-1.7.0-openjdk
+
+3. Jenkins installieren
+-https://d1.awsstatic.com/Projects/P5505030/aws-project_Jenkins-build-server.pdf
+-sudo yum -y update
+-sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo
+-sudo rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+-sudo yum -y install jenkins
+-sudo sed -i "s/\$JENKINS_JAVA_CMD \$JENKINS_JAVA_OPTIONS -DJENKINS_HOME=\$JENKINS_HOME -jar \$JENKINS_WAR/\$JENKINS_JAVA_CMD \$JENKINS_JAVA_OPTIONS -Djenkins.install.runSetupWizard=false -DJENKINS_HOME=\$JENKINS_HOME -jar \$JENKINS_WAR/g" ./nodes.yaml
+-sudo service jenkins start
+
+4. Config Jenkins User
+-Jenkins needs bash (for testing)
+                -sudo usermod -s /bin/sh jenkins
+                -sudo su jenkins 
+                -mkdir ~/.aws
+                -echo "[default]" > ~/.aws/config
+                -echo "output = json" >> ~/.aws/config
+                -echo "region = eu-central-1" >> ~/.aws/config
+-Jenkins User needs Sudo
+                -sudo su
+                -echo "jenkins    ALL = NOPASSWD: ALL" >> /etc/sudoers
+
+5. Install/Start Docker and Docker-Compose
+-sudo su jenkins
+-sudo yum install -y docker
+-sudo service docker start
+-sudo usermod -a -G docker ec2-user
+-sudo usermod -a -G docker jenkins
+-https://docs.docker.com/compose/install/#install-compose
+-sudo curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
+-sudo chmod +x /usr/bin/docker-compose
+-sudo chkconfig docker on
+-docker-compose --version
+-sudo chmod 666 /var/run/docker.*
+
+6. Fix Docker dir persmissions
+-sudo chown root:users /var/run/docker/ -R
+
+
+7.Initial ssh verbindung gegen kops aufbauen
+                -ssh -oStrictHostKeyChecking=no -i /var/lib/jenkins/KOPSinstance.pem ec2-user@172.31.43.137
+
+
+######AB HIER MANUEL#######
+8. Config First Jenkins call.
+-BROWSE: ec2-18-197-13-213.eu-central-1.compute.amazonaws.com:8080
+-cat /var/lib/jenkins/secrets/initialAdminPassword
+-Enter Initial Password
+-Create admin:admin
+
+9. Konfigurationen in der Jenkis UI - Install missing Plugins for Jenkins
+-BlueOcean
+-HTML Publisher
+-Lockable Resources plugin
+
+10. Konfigurationen in der Jenkis UI - Create GitHub Credentials
+-Jenkins Startseite
+-Credentials
+-System
+-Global Credentials (unrestricted)
+-Add Credentials
+-ADD Username with password; Global; maternavw; Materna.123; githubcred; githubcred;
+-!ID = Ref für Jenkins Build um die Credentials abzulesen!
+
+11. Konfigurationen in der Jenkis UI - Pipeline anlegen
+-Jenkins Startseite
+-New Item
+-Name angeben
+-Type=Pipeline
+->Create
+-Reiter Build Triggers
+                -Poll SCM * * * * *
+-Reiter Pipeline
+                -Definition= Pipeline script form SCM
+                -SCM= Git
+                -RepositoryURL= https://github.com/maternavw/sc.git
+                -Credentials= Zuvor angelegte Credentials
+                -Script Path= config/pipeline/pipeline.groovy
+                -Uncheck Lightweight checkout
+                
+                
+12. Gradle Installieren
+mkdir /opt/gradle
+unzip -d /opt/gradle gradle-4.6-bin.zip
+ls /opt/gradle/gradle-4.6
+export PATH=$PATH:/opt/gradle/gradle-4.6/bin
+sudo su jenkins
+export PATH=$PATH:/opt/gradle/gradle-4.6/bin
+
+13. Install maven
+sudo wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo
+sudo sed -i s/\$releasever/6/g /etc/yum.repos.d/epel-apache-maven.repo
+sudo yum install -y apache-maven
+mvn --version
+
+
+
+
+
+
+
+
+
+
+
+
+---
+Install JDK 1.8 von Oracel
+https://gist.github.com/rtfpessoa/17752cbf7156bdf32c59
+switch alternatives!
