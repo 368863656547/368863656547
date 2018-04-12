@@ -76,10 +76,12 @@ Resources:
   jenkinsinstance:
     Type: 'AWS::EC2::Instance'
     Properties:
+      # Ausgeschaltet um Stack besser resetten zu können !!!!
       DisableApiTermination: 'false'
       InstanceInitiatedShutdownBehavior: 'stop'
       ImageId: 'ami-ac442ac3'
       InstanceType: 't2.medium'
+      IamInstanceProfile: 'EC2AdminAccessProfile'
       KeyName: 
         Ref: KeyName
       UserData: !Base64 
@@ -87,19 +89,97 @@ Resources:
           - ''
           - - |
               #!/bin/bash -xe
-            - |
               sudo yum -y update
-            - |
-              sudo yum install -y java-1.8.0
-            - |
+              # jdk => muss orcale java werden
               sudo yum remove -y java-1.7.0-openjdk
-            - |
-              mkdir /usr/lib/jenkins/
-              cd /usr/lib/jenkins/
-              wget http://mirrors.jenkins.io/war-stable/latest/jenkins.war
-              java -jar jenkins.war --httpPort=8080 >>/dev/null 2>>/dev/null  &
-              sleep 15
-              wget http://127.0.0.1:8080/jnlpJars/jenkins-cli.jar
+              echo 'Updates done'
+              # Create Pem for Jenkins SSH 
+              echo '-----BEGIN RSA PRIVATE KEY-----'                                              >> /tmp/ShowcaseKeyPair.pem
+              echo 'MIIEogIBAAKCAQEAijsA6gaOYVCUZVdeXf/x6m6IFKpPkciHOh/k60ydgZo2pEmHD1fej0iZZWHS' >> /tmp/ShowcaseKeyPair.pem
+              echo 'G4A2a4wluzO0GPJPDkiO3fhaVJimhLoWXmfPJzo0lk7WHZloUF2qNFrO+U6NTC2f7h0w92YqP4VU' >> /tmp/ShowcaseKeyPair.pem
+              echo 'OlSnCxP/x0dockDw4fhDOGmwBP9FDYQK3VGmUNp2NrynX0bXKlHrmZ+H8AI4LE1ex5S2+8LJpQdt' >> /tmp/ShowcaseKeyPair.pem
+              echo 'e4TpUFYKMh3acUxVGqetqqQaARwnKF1SltUmVb1Apyy8i0gL2v9H5RGxO7DWXg2lI75nF7njW7Kn' >> /tmp/ShowcaseKeyPair.pem
+              echo 'UQDRO0oMXBGI3NCta5lH4yvKw3uAx+kfZzCJdXvjDBO/r+1Tr9GU8wIDAQABAoIBAEaTa5sRL97l' >> /tmp/ShowcaseKeyPair.pem
+              echo '2m6HlineRPDR8G7Eqg2f2dNGd4Xfv0dtqlplJC0kSwDTK2bE9BaQdrigfJ9A/cIC7XQ4faE9bTlm' >> /tmp/ShowcaseKeyPair.pem
+              echo 'GxcHP+aBkBXSNQlNRSslqUnnGMDUYHqPrbroTJCxnM+j/QwjkeaaVBNm6aAgiGZVW+ez7vY9l95l' >> /tmp/ShowcaseKeyPair.pem
+              echo 'SydkdHucsV8UzO4XLrgXdwjACDnHHMvqmHW9NiO5N/wUJ29RdZdxhxzfQhL/9VwwQSibyg6B/Brc' >> /tmp/ShowcaseKeyPair.pem
+              echo '+fq78S+SxyxXFE+I6Rcjajvn3abBGXGCARTQ6Y1Rb6NR/OBOYARcY9Ois6r6mNR5++Z4/ctGJeT6' >> /tmp/ShowcaseKeyPair.pem
+              echo 'cWeGvghptn9538yPHG2XtH47v/ECgYEA50KU76zWGDg1l9a/+pC/eXTM9zfkMTFo42aSvgSN3MFi' >> /tmp/ShowcaseKeyPair.pem
+              echo 'CPsQqsrXYQ1z7CBzv1QKJYGk0gUPsbmYa5gOvwYDKcovDvo24/Ks45dt3tjrbaW8BMKK1Z1Sq8IX' >> /tmp/ShowcaseKeyPair.pem
+              echo '1Zk3bwJwmPRnSmEE3UshWI14IkbE7pJPgv8uY5UkpbUOMUZ8jDkCgYEAmQSpNsvZSWQ12OuS2icj' >> /tmp/ShowcaseKeyPair.pem
+              echo 'iAUhvdeX2xzSG+cMkLEbuPpoqWXkoz18p1bH6ZoYXjww3EL8m+LYwcYIbmTLPrwbQQd3AR8qcfVL' >> /tmp/ShowcaseKeyPair.pem
+              echo 'l7ziwT1ewvZyWjeb6+7XFhPcXZHJuWCHDmke63UZ60Ta7xuP5uLTCRe3qo98aO4SQ6H0RcvhAosC' >> /tmp/ShowcaseKeyPair.pem
+              echo 'gYBmizuHW1hDvQjmny7ZaD2/GW+ZX4sr1QDxdJY088gDzywtV0Z4tSDzxAdW+LzaZeVp5Ca1idD/' >> /tmp/ShowcaseKeyPair.pem
+              echo 'uZBAhVhkk8HrUd+0AHc+dGj9MjRh0EX0hLzuT2VIe04hIxt2d04BR0+uQxFaBdMmXR4YKgLPEBpa' >> /tmp/ShowcaseKeyPair.pem
+              echo 'vz3KlGR5e7SYVcRJTTwE4QKBgAn3D74N0HzDFe6miM3ENsAo9WWToMQYQGaoyVyy7AdD54UAqb8n' >> /tmp/ShowcaseKeyPair.pem
+              echo 'xfJv6F0COAwLB3OQuTq9rzgPWYU28zWGso+tmMZt7Sm2u9GJ74p+IKm5uwC9Fl5rE37QlE1TrTtx' >> /tmp/ShowcaseKeyPair.pem
+              echo 'WdpKZkUXPzTfKxLfTKPQqcWx0bg91/BNcMsOxQW2nVS5AoGAIgUk9T2tjo4QtJIBc0vsGJ2tAptO' >> /tmp/ShowcaseKeyPair.pem
+              echo 'WIXW6IcWeI2ZAVZfG/bJpUAT/6dNyTnetchFWW37bIH1bUPy3jvosoPv45EgM8Tr1VXRvD19ab4U' >> /tmp/ShowcaseKeyPair.pem
+              echo 'mvfYoLOLAfHd7qM6hUwWChftKybrMiPAT+fb1aSlgyCh931k0v9QC33VaFmyEGoT98A='         >> /tmp/ShowcaseKeyPair.pem
+              echo '-----END RSA PRIVATE KEY-----'                                                >> /tmp/ShowcaseKeyPair.pem              
+              chmod 400 /tmp/ShowcaseKeyPair.pem
+              echo 'Pem created'
+              # ??? Nicht nur für den Jenkins User ????? Siehe ab Zeile 133
+              #mkdir ~/.aws
+              #echo "[default]" > ~/.aws/config
+              #echo "output = json" >> ~/.aws/config
+              #echo "region = eu-central-1" >> ~/.aws/config
+              #Install Jenkins
+              wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo
+              rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+              yum -y install jenkins
+              sed -i 's/\$JENKINS_JAVA_CMD \$JENKINS_JAVA_OPTIONS -DJENKINS_HOME=\$JENKINS_HOME -jar \$JENKINS_WAR/\$JENKINS_JAVA_CMD \$JENKINS_JAVA_OPTIONS -Djenkins.install.runSetupWizard=false -DJENKINS_HOME=\$JENKINS_HOME -jar \$JENKINS_WAR/g' /etc/init.d/jenkins
+              echo 'Install Jenkins done'
+              # Config Jenkins User
+              usermod -s /bin/sh jenkins
+              sudo su jenkins
+              mkdir ~/.aws
+              echo "[default]" > ~/.aws/config
+              echo "output = json" >> ~/.aws/config
+              echo "region = eu-central-1" >> ~/.aws/config
+              sudo su
+              echo "jenkins    ALL = NOPASSWD: ALL" >> /etc/sudoers
+              echo 'Jenkins User configured'
+              # Install Docker & Docker Compose
+              sudo yum install -y docker
+              sudo service docker start
+              sudo usermod -a -G docker ec2-user
+              sudo usermod -a -G docker jenkins
+              sudo curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
+              sudo chmod +x /usr/bin/docker-compose
+              sudo chkconfig docker on
+              docker-compose --version
+              sudo chmod 666 /var/run/docker.*
+              sudo chown root:users /var/run/docker/ -R
+              echo 'Docker & Dcoker Compose installed'
+              # Install Oracle Java JDK 8
+              wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u141-b15/336fa29ff2bb4ef291e347e091f7f4a7/jdk-8u141-linux-x64.rpm
+              yum install -y jdk-8u141-linux-x64.rpm
+              service jenkins start
+              # Installation Gradle
+              mkdir /opt/gradle
+              cd /opt/gradle
+              wget -c http://services.gradle.org/distributions/gradle-4.6-all.zip
+              unzip -d /opt/gradle gradle-4.6-all.zip
+              export PATH=$PATH:/opt/gradle/gradle-4.6/bin
+              sudo runuser -l jenkins -c 'export PATH=$PATH:/opt/gradle/gradle-4.6/bin'
+              # Installation Maven
+              wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo
+              sed -i s/\$releasever/6/g /etc/yum.repos.d/epel-apache-maven.repo
+              yum install -y apache-maven
+              # Download Jenkins Cli & Install Plugins: BlueOcean, Html Publisher, Lockable Resources
+              mkdir /opt/jenkins_cli
+              # => das wget wird nicht ausgeführt, warum auch immer !!!!!!!!!!!!!!!!!!!!!!!!!!
+              sudo wget http://127.0.0.1:8080/jnlpJars/jenkins-cli.jar
+              cd /opt/jenkins_cli
+              java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ install-plugin htmlpublisher
+              java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ install-plugin lockable-resources
+              java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ install-plugin blueocean
+              sleep 90
+              # Initiale SSH Verbindung gegen die KOPSInstanz aufbauen
+              ssh -oStrictHostKeyChecking=no -i /tmp/ShowcaseKeyPair.pem ec2-user@172.31.43.137
+              exit
+              echo 'Initial SSH Connection etablished'
       Monitoring: 'false'
       Tags:
         - Key: Name
