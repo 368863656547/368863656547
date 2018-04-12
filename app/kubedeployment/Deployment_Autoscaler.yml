@@ -32,7 +32,7 @@ spec:
             - --stderrthreshold=info
             - --cloud-provider=aws
             - --skip-nodes-with-local-storage=false
-            - --nodes=2:4:nodes.k8s-showcase.cluster.k8s.local
+            - --nodes=2:10:nodes.k8s-showcase.cluster.k8s.local
           env:
             - name: AWS_REGION
               value: eu-central-1
