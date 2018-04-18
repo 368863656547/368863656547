@@ -1,0 +1,34 @@
+## needs service ip
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: influxdb-connector
+#   namespace: monitoring
+# spec:
+#   ports:
+#   - protocol: TCP
+#     port: 8086
+#     targetPort: 8086
+# ---
+# apiVersion: v1
+# kind: Endpoints
+# metadata:
+#   name: influxdb-connector
+#   namespace: monitoring
+# subsets:
+#   - addresses:
+#       - ip: 100.96.2.9
+#     ports:
+#       - port: 8086
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: influxdb-connector
+  namespace: monitoring
+spec:
+  type: ExternalName
+  externalName: monitoring-influxdb.kube-system.svc.cluster.local
+  ports:
+  - port:  8086
