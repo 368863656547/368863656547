@@ -156,15 +156,15 @@ agent none
 				script{
 					echo 'Deployment..'
 
-					sh'ssh -oStrictHostKeyChecking=no -i ~/KOPSinstance.pem ec2-user@172.31.43.137 "kubectl set image deployments/appserver appserver=368863656547.dkr.ecr.eu-central-1.amazonaws.com/appserver:'+ VERSION +'"'
+					sh'sudo ssh -oStrictHostKeyChecking=no -i ~/KOPSinstance.pem ec2-user@172.31.43.137 "kubectl set image deployments/appserver appserver=368863656547.dkr.ecr.eu-central-1.amazonaws.com/appserver:'+ VERSION +'"'
 					//sh'ssh -i ~/KOPSinstance.pem ec2-user@172.31.43.137 "kubectl set image deployments/database database=368863656547.dkr.ecr.eu-central-1.amazonaws.com/database:'+ VERSION +'"'
-					sh'ssh -oStrictHostKeyChecking=no -i ~/KOPSinstance.pem ec2-user@172.31.43.137 "kubectl set image deployments/payment-gateway payment-gateway=368863656547.dkr.ecr.eu-central-1.amazonaws.com/payment-gateway:'+ VERSION +'"'
+					sh'sudo ssh -oStrictHostKeyChecking=no -i ~/KOPSinstance.pem ec2-user@172.31.43.137 "kubectl set image deployments/payment-gateway payment-gateway=368863656547.dkr.ecr.eu-central-1.amazonaws.com/payment-gateway:'+ VERSION +'"'
 
 					sh'sleep 10s'
 
-					sh'ssh -oStrictHostKeyChecking=no -i ~/KOPSinstance.pem ec2-user@172.31.43.137 "kubectl rollout status deployments/appserver"'
+					sh'sudo ssh -oStrictHostKeyChecking=no -i ~/KOPSinstance.pem ec2-user@172.31.43.137 "kubectl rollout status deployments/appserver"'
 					//sh'ssh -i ~/KOPSinstance.pem ec2-user@172.31.43.137 "kubectl rollout status deployments/database"'
-					sh'ssh -oStrictHostKeyChecking=no -i ~/KOPSinstance.pem ec2-user@172.31.43.137 "kubectl rollout status deployments/payment-gateway"'
+					sh'sudo ssh -oStrictHostKeyChecking=no -i ~/KOPSinstance.pem ec2-user@172.31.43.137 "kubectl rollout status deployments/payment-gateway"'
 
 				}
 			}
