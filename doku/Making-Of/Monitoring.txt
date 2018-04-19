@@ -91,3 +91,7 @@ Es gibt noch ein ./metricdeploy/delete-monitoring.sh, was alles Monitoringbezoge
       - labels: kubernetes.io/cluster-service: 'true', kubernetes.io/name: Grafana
       - URL: kubectl cluster-info
       - Login: kubectl config view --minify
+  - Grafana bietet eine eigene Alerting-Lösungen, die bei den meisten Datenquellen schon funktioniert.
+  - Grafana kann bei Erstellung mit Konfigurationsdatein bereitgestellt werden
+    Datenquellen und Dashboardeinstellungen können somit schon beim Start konfiguriert sein.
+    Nutzer, Organisationen und Alarme können leider noch nicht auf diese Weise eingespielt werden, was sich jedoch in Zukunft laut den Entwicklern ändern soll.
