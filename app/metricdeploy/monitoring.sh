@@ -2,6 +2,7 @@
 
 HEAPSTER_FILE="./heapster.yaml"
 DASHBOARD_FILE="./dashboard.yaml"
+PROMETHEUS_BUNDLE_FILE="./prometheus-bundle.yaml"
 PROMETHEUS_FILE="./prometheus.yaml"
 GRAFANA_FILE="./grafana.yaml"
 SERVICE_FILE="./service-connector.yaml"
@@ -28,7 +29,10 @@ if ! kubectl get -f ${DASHBOARD_FILE} &>/dev/null; then
 fi
 
 # deploy prometheus if not exists
-if ! kubectl get -f ${PROMETHEUS_FILE} &>/dev/null; then
+if ! kubectl get -f ${PROMETHEUS_BUNDLE_FILE} &>/dev/null && ! kubectlget -f §{PROMETHEUS_FILE} &>/dev/null; then
+  kubectl create -f ${PROMETHEUS_BUNDLE_FILE}
+  # Warten bis Prometheus-Operater-Pod auf jeden Fall läuft
+  sleep 30s
   kubectl create -f ${PROMETHEUS_FILE}
 fi
 

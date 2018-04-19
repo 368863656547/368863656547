@@ -1,125 +1,9 @@
-# ---
-# apiVersion: v1
-# kind: Namespace
-# metadata:
-#   name: monitoring
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: prometheus-operator
-  namespace: monitoring
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: prometheus-operator
-  namespace: monitoring
-rules:
-- apiGroups:
-  - extensions
-  resources:
-  - thirdpartyresources
-  verbs:
-  - "*"
-- apiGroups:
-  - apiextensions.k8s.io
-  resources:
-  - customresourcedefinitions
-  verbs:
-  - "*"
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - alertmanagers
-  - prometheuses
-  - servicemonitors
-  verbs:
-  - "*"
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets
-  verbs: ["*"]
-- apiGroups: [""]
-  resources:
-  - configmaps
-  - secrets
-  verbs: ["*"]
-- apiGroups: [""]
-  resources:
-  - pods
-  verbs: ["list", "delete"]
-- apiGroups: [""]
-  resources:
-  - services
-  - endpoints
-  verbs: ["get", "create", "update"]
-- apiGroups: [""]
-  resources:
-  - nodes
-  verbs: ["list", "watch"]
-- apiGroups: [""]
-  resources:
-  - namespaces
-  verbs: ["list"]
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: prometheus-operator
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: prometheus-operator
-subjects:
-- kind: ServiceAccount
-  name: prometheus-operator
-  namespace: monitoring
-
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  labels:
-    k8s-app: prometheus-operator
-  name: prometheus-operator
-  namespace: monitoring
-spec:
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        k8s-app: prometheus-operator
-    spec:
-      serviceAccountName: prometheus-operator
-      containers:
-      - image: quay.io/coreos/prometheus-operator:v0.17.0
-        name: prometheus-operator
-        args:
-        - --kubelet-service=kube-system/kubelet
-        - --config-reloader-image=quay.io/coreos/configmap-reload:v0.0.1
-        ports:
-        - containerPort: 8080
-          name: http
-        resources:
-          requests:
-            cpu: 100m
-            memory: 50Mi
-          limits:
-            cpu: 200m
-            memory: 100Mi
-
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: kube-state-metrics
   namespace: monitoring
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -139,7 +23,6 @@ rules:
   - deployments
   - replicasets
   verbs: ["list", "watch"]
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -153,7 +36,6 @@ subjects:
 - kind: ServiceAccount
   name: kube-state-metrics
   namespace: monitoring
-
 ---
 apiVersion: v1
 kind: Service
@@ -172,7 +54,6 @@ spec:
     port: 10251
     targetPort: 10251
     protocol: TCP
-
 ---
 apiVersion: v1
 kind: Service
@@ -191,7 +72,6 @@ spec:
     port: 10252
     targetPort: 10252
     protocol: TCP
-
 ---
 apiVersion: extensions/v1beta1
 kind: DaemonSet
@@ -241,7 +121,6 @@ spec:
       - name: sys
         hostPath:
           path: /sys
-
 ---
 apiVersion: v1
 kind: Service
@@ -260,7 +139,6 @@ spec:
     protocol: TCP
   selector:
     app: node-exporter
-
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -314,7 +192,6 @@ spec:
           - --extra-memory=2Mi
           - --threshold=5
           - --deployment=kube-state-metrics
-
 ---
 apiVersion: v1
 kind: Service
@@ -332,7 +209,6 @@ spec:
     protocol: TCP
   selector:
     app: kube-state-metrics
-
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
@@ -364,7 +240,6 @@ spec:
     - namespace: monitoring
       name: alertmanager-main
       port: web
-
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -382,7 +257,6 @@ spec:
   namespaceSelector:
     matchNames:
     - monitoring
-
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -408,7 +282,6 @@ spec:
       caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
       serverName: kubernetes
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -431,7 +304,6 @@ spec:
   namespaceSelector:
     matchNames:
     - kube-system
-
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -451,7 +323,6 @@ spec:
   namespaceSelector:
     matchNames:
     - kube-system
-
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -471,7 +342,6 @@ spec:
   namespaceSelector:
     matchNames:
     - kube-system
-
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -492,7 +362,6 @@ spec:
   - port: http-metrics
     interval: 30s
     honorLabels: true
-
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -512,7 +381,6 @@ spec:
   endpoints:
   - port: http-metrics
     interval: 30s
-
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: Alertmanager
@@ -524,7 +392,6 @@ metadata:
 spec:
   replicas: 3
   version: v0.9.1
-
 ---
 apiVersion: v1
 kind: Secret
