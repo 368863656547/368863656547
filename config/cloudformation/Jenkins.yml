@@ -1,0 +1,148 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: SonarQube and Jenkins Template
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the Elastic Beanstalk hosts
+    Default: ShowcaseKeyPair
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: "[-_ a-zA-Z0-9]*"
+    ConstraintDescription: can contain only alphanumeric characters, spaces, dashes and underscores.
+  SecurityGroupName:
+    Description: Name of an existing SecurityGroup
+    Default: 'sg-0202f16ec9f8b415e'
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+  SubnetIdName:
+    Description: Name of an existing SubnetId
+    Default: 'subnet-1732e96a'
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+Resources:
+  jenkinsinstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      # Ausgeschaltet um Stack besser resetten zu können !!!!
+      DisableApiTermination: 'false'
+      InstanceInitiatedShutdownBehavior: 'stop'
+      ImageId: 'ami-ac442ac3'
+      InstanceType: 't2.medium'
+      IamInstanceProfile: 'EC2AdminAccessProfile'
+      KeyName: 
+        Ref: KeyName
+      UserData: !Base64 
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -xe
+              # INSTALL AWS CLI
+              # aws configure
+              mkdir /home/ec2-user/.aws
+              echo "[default]" > /home/ec2-user/.aws/config
+              echo "output = json" >> /home/ec2-user/.aws/config
+              echo "region = eu-central-1" >> /home/ec2-user/.aws/config
+              # root needs aws configure as well
+              mkdir ~/.aws
+              cp /home/ec2-user/.aws/config ~/.aws/config
+              # copy 1. Pem
+              aws s3 cp --region eu-central-1 s3://kops-state-store-4f6f2264e5c1d07122e5f4c5c218c4ca/k8s-showcase.cluster.k8s.local/Automation/KOPSinstance.pem /opt/jenkins_cli/
+              aws s3 cp --region eu-central-1 s3://kops-state-store-4f6f2264e5c1d07122e5f4c5c218c4ca/k8s-showcase.cluster.k8s.local/Automation/ShowcaseKeyPair.pem /tmp/
+              aws s3 cp --region eu-central-1 s3://kops-state-store-4f6f2264e5c1d07122e5f4c5c218c4ca/k8s-showcase.cluster.k8s.local/Automation/githubcred.xml /opt/jenkins_cli/
+              aws s3 cp --region eu-central-1 s3://kops-state-store-4f6f2264e5c1d07122e5f4c5c218c4ca/k8s-showcase.cluster.k8s.local/Automation/hudson.plugins.sonar.SonarRunnerInstallation.xml /var/lib/jenkins/
+              aws s3 cp --region eu-central-1 s3://kops-state-store-4f6f2264e5c1d07122e5f4c5c218c4ca/k8s-showcase.cluster.k8s.local/Automation/hudson.plugins.sonar.SonarGlobalConfiguration.xml /var/lib/jenkins/
+              aws s3 cp --region eu-central-1 s3://kops-state-store-4f6f2264e5c1d07122e5f4c5c218c4ca/k8s-showcase.cluster.k8s.local/Automation/job.xml /opt/jenkins_cli/
+              sudo yum -y update
+              sudo yum remove -y java-1.7.0-openjdk
+              # Create Pem for Jenkins SSH 
+              # DOWNLOAD FROM S3 PEM's
+              chmod 400 /tmp/ShowcaseKeyPair.pem
+              # Install Git & Jenkins
+              yum install -y git
+              wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo
+              rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+              yum -y install jenkins
+              sed -i 's/\$JENKINS_JAVA_CMD \$JENKINS_JAVA_OPTIONS -DJENKINS_HOME=\$JENKINS_HOME -jar \$JENKINS_WAR/\$JENKINS_JAVA_CMD \$JENKINS_JAVA_OPTIONS -Djenkins.install.runSetupWizard=false -DJENKINS_HOME=\$JENKINS_HOME -jar \$JENKINS_WAR/g' /etc/init.d/jenkins
+              # Config Jenkins User
+              usermod -s /bin/sh jenkins
+              echo "jenkins    ALL = NOPASSWD: ALL" >> /etc/sudoers
+              # Install Docker & Docker Compose
+              yum install -y docker
+              service docker start
+              usermod -a -G docker ec2-user
+              usermod -a -G docker jenkins
+              curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
+              chmod +x /usr/bin/docker-compose
+              chkconfig docker on
+              docker-compose --version
+              chmod 666 /var/run/docker.*
+              chown root:users /var/run/docker/ -R
+              # Install Oracle Java JDK 8
+              wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u141-b15/336fa29ff2bb4ef291e347e091f7f4a7/jdk-8u141-linux-x64.rpm
+              yum install -y jdk-8u141-linux-x64.rpm
+              service jenkins start
+              # Installation Gradle
+              mkdir /opt/gradle
+              cd /opt/gradle
+              wget -c http://services.gradle.org/distributions/gradle-4.6-all.zip
+              unzip -d /opt/gradle gradle-4.6-all.zip
+              export PATH=$PATH:/opt/gradle/gradle-4.6/bin
+              sudo runuser -l jenkins -c 'export PATH=$PATH:/opt/gradle/gradle-4.6/bin'
+              # Installation Maven
+              wget http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo -O /etc/yum.repos.d/epel-apache-maven.repo
+              sed -i s/\$releasever/6/g /etc/yum.repos.d/epel-apache-maven.repo
+              yum install -y apache-maven
+              # Download Jenkins Cli & Install Plugins: BlueOcean, Html Publisher, Lockable Resources
+              cd /opt/jenkins_cli
+              sudo wget http://127.0.0.1:8080/jnlpJars/jenkins-cli.jar
+              java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ install-plugin htmlpublisher
+              java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ install-plugin lockable-resources
+              java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ install-plugin pipeline-build-step
+              java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ install-plugin saferestart
+              java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ install-plugin credentials
+              java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ install-plugin git
+              java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ install-plugin sonar
+              java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ install-plugin blueocean
+              # Create Credentials for GitHub
+              chmod +x /opt/jenkins_cli/githubcred.xml
+              chown root:users /opt/jenkins_cli/githubcred.xml
+              cd /opt/jenkins_cli
+              service jenkins restart
+              # Warten, da Jenkins neustartet und der nächste Befehl auf einen Timeout läuft
+              sleep 90
+              #CREDENTIALS XML
+              cat githubcred.xml | java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ create-credentials-by-xml "SystemCredentialsProvider::SystemContextResolver::jenkins" "(global)"
+              # CREATE JENKINS PIPELINE JOB
+              cat job.xml | java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ create-job Atsea-Shop
+              sleep 90 
+              # CREATE SONNAR RUNNER
+              cp /opt/jenkins_cli/KOPSinstance.pem /var/lib/jenkins/
+              chown jenkins:jenkins /var/lib/jenkins/KOPSinstance.pem
+              chown jenkins:jenkins /var/lib/jenkins/hudson.plugins.sonar.SonarRunnerInstallation.xml
+              chown jenkins:jenkins /var/lib/jenkins/hudson.plugins.sonar.SonarGlobalConfiguration.xml
+              sed -i 's/<spec><\/spec>/<spec>* * * * * *<\/spec>/g' job.xml
+              service jenkins restart
+              sleep 240
+              cd /opt/jenkins_cli
+              java -jar jenkins-cli.jar -s http://127.0.0.1:8080/ delete-builds Atsea-Shop '1'
+              # Initiale SSH Verbindung gegen die KOPSInstanz aufbauen
+              # ssh -oStrictHostKeyChecking=no -i /var/lib/jenkins/KOPSinstance.pem ec2-user@172.31.43.137
+              # exit
+              echo 'Initial SSH Connection etablished'
+      Monitoring: 'false'
+      Tags:
+        - Key: Name
+          Value: JenkinsTestt
+      NetworkInterfaces:
+        - DeleteOnTermination: 'true'
+          Description: 'Primary network interface'
+          DeviceIndex: 0
+          SubnetId: 
+            Ref: SubnetIdName
+          PrivateIpAddresses: 
+            - PrivateIpAddress: '172.31.33.223'
+              Primary: true
+          GroupSet: 
+            - Ref: SecurityGroupName
