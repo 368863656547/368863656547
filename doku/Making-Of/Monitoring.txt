@@ -1,0 +1,97 @@
+--- Deploy Methode ---
+./metricdeploy/monitoring.sh
+
+Das Skript erstellt einen neuen Namespace "monitoring" in der grafana und Prometheus laufen.
+Danach werden die einzelnen Lösungen auf dem Cluster verteilt.
+
+Es gibt noch ein ./metricdeploy/delete-monitoring.sh, was alles Monitoringbezogene wieder löscht.
+
+
+--- Bestandteile ---
+1. Heapster & InfluxDB
+  - Service und Deployment
+  - ClusterRole/-Binding & ServiceAccount:
+    Zugriff für Heapster auf Clusterinterne Informationen und Dienste
+
+2. Dashboard
+  - Service und Deployment
+  - ClusterRole/-Binding & ServiceAccount:
+    Zugriff für Dashboard auf Clusterinterne Informationen und Dienste
+  - Secret:
+    Zugriff auf Dashboard eigene Zertifikate
+
+3. Prometheus, Kube-State-Metrics, Node-Exporter, Alertmanager
+  - Service und Deployment
+  - Demonset (>1 Instanz auf allen Nodes): Node-Exporter: Infos über Node-Hardware
+  - ClusterRole/-Binding & ServiceAccount:
+    Auflistung und Zugriff auf Informationen von Clusterelementen
+  - ServiceMonitor:
+    Bietet konfigurationen was und wie Prometheus Informationen sammelt
+
+4. ElasticSearch
+  - noch nicht implementiert
+
+5. CloudWatch
+  - noch nicht implementiert
+
+6. Grafana
+  - Deployment:
+    Configuration des Containers über Umgebungsvariablen (ENV)
+    Einbinden der Configmaps über VolumeMounts
+  - Secret: Logindaten für Defaultuser
+  - ConfigMaps:
+    - Provisioning:
+      - Datenquellen
+      - Dashboardquellen
+    - Dashboards:
+      - Exportierte Dashboards als JSON direkt in der YAML-Datei.
+      - Können recht lang werden (1000+ Zeilen).
+      - Die Dashboards müssen für das Provisioning expliziet von Grafana exportiert werden.
+        Kopierter angezeigter JSON-Quelltext funktioniert nicht.
+        Da die Datenquellen schon bekannt sind, sollten die Quellen in den Dashboards (meist in format: "${DS_<SOURCE>}") mit der Quelle aus dem Datenquellenprovisioning ersetzt werden.
+
+
+--- Tipps für die Monitoring-Lösungen ---
+
+1. Heapster & InfluxDB
+  - InfluxDB login: root root
+  - Beide Dienste müssen nicht direkt angeschaut werden
+  - Grafische Darstellung später über Grafana
+
+2. Dashboard
+  - Zugriff über Api:
+    <api-adresse>/ui
+  - Login über Token:
+    kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep kubernetes-dashboard-token | awk '{print $1}')
+  - Session läuft nach einer gewissen Zeit (etwa 10 min Inaktivität) aus. Gleicher Token zum wieder anmelden nutzen.
+
+3. Prometheus & Alarmmanager
+  - Beide theoretisch über Services erreichbar
+  - Dafür z.B. ./metricdeploy/prometheus-test-service.yaml deployen
+  - Prometheus nicht über Api direkt aufrufen. Einige Funktionen arbeiten dann nicht richtig
+  - Testservices nicht mit den eigendlichen Services vertauschen
+
+4. ElasticSearch
+  - noch nicht implementiert
+
+5. CloudWatch
+  - noch nicht implementiert
+
+6. Grafana
+  - Login: admin admin
+  - Service gibt an, wie Grafana angesprochen werden kann
+    - NodePort:
+      - Servicetype: NodePort
+      - nodeport: 30900
+    - LoadBalancer:
+      - Servicetype: LoadBalancer
+      - Cluster sollte einen AWS-LoadBalancer erstellen
+    - Cluster Add-On:
+      - Servicetype: ClusterIP
+      - labels: kubernetes.io/cluster-service: 'true', kubernetes.io/name: Grafana
+      - URL: kubectl cluster-info
+      - Login: kubectl config view --minify
+  - Grafana bietet eine eigene Alerting-Lösungen, die bei den meisten Datenquellen schon funktioniert.
+  - Grafana kann bei Erstellung mit Konfigurationsdatein bereitgestellt werden
+    Datenquellen und Dashboardeinstellungen können somit schon beim Start konfiguriert sein.
+    Nutzer, Organisationen und Alarme können leider noch nicht auf diese Weise eingespielt werden, was sich jedoch in Zukunft laut den Entwicklern ändern soll.
