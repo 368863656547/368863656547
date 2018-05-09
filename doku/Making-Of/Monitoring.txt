@@ -32,7 +32,8 @@ Es gibt noch ein ./metricdeploy/delete-monitoring.sh, was alles Monitoringbezoge
   - noch nicht implementiert
 
 5. CloudWatch
-  - noch nicht implementiert
+  - Config für Grafana
+  - Einstellung über cli oder AWS-Dashboard
 
 6. Grafana
   - Deployment:
@@ -75,7 +76,7 @@ Es gibt noch ein ./metricdeploy/delete-monitoring.sh, was alles Monitoringbezoge
   - noch nicht implementiert
 
 5. CloudWatch
-  - noch nicht implementiert
+  - Detailiertes Monitoring sollte für die Autoscalinggruppen eingeschaltet werden
 
 6. Grafana
   - Login: admin admin
