@@ -29,12 +29,11 @@ metadata:
     app: grafana
     kubernetes.io/name: GrafanaPrometheus
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
   - port: 3000
     protocol: TCP
     targetPort: web
-    nodePort: 30900
   selector:
     app: grafana
 
