@@ -87,6 +87,8 @@ Es gibt noch ein ./metricdeploy/delete-monitoring.sh, was alles Monitoringbezoge
     - LoadBalancer:
       - Servicetype: LoadBalancer
       - Cluster sollte einen AWS-LoadBalancer erstellen
+      - adresse mit folgendem Befehl:
+        kubectl get svc -n monitoring grafana -o json | jq -r '.status.loadBalancer.ingress[].hostname'
     - Cluster Add-On:
       - Servicetype: ClusterIP
       - labels: kubernetes.io/cluster-service: 'true', kubernetes.io/name: Grafana
