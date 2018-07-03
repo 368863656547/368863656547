@@ -6,6 +6,7 @@ PROMETHEUS_BUNDLE_FILE="./prometheus-bundle.yaml"
 PROMETHEUS_FILE="./prometheus.yaml"
 GRAFANA_FILE="./grafana.yaml"
 SERVICE_FILE="./service-connector.yaml"
+WEAVE_FILE="./weave-scope.yaml"
 
 # create MONITORING namespace if not exists
 # namespace could have been terminated. Need to wait until it's completely gone
@@ -46,8 +47,6 @@ if ! kubectl get -f ${SERVICE_FILE} &>/dev/null; then
   kubectl create -f ${SERVICE_FILE}
 fi
 
-unset HEAPSTER_FILE
-unset DASHBOARD_FILE
-unset PROMETHEUS_FILE
-unset GRAFANA_FILE
-unset SERVICE_FILE
+if ! kubectl get -f ${WEAVE_FILE} &>/dev/null; then
+  kubectl create -f ${WEAVE_FILE}
+fi
