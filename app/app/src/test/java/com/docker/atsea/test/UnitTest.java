@@ -77,7 +77,7 @@ public class UnitTest {
 	public Order referenceOrder = new Order(1l, orderDate, 2l, productsOrdered);
 	
 	// Test CustomerService implementation
-//	@Test
+	@Test
 	public void whenCustomerUserNameIsProvided_theReturnedNameIsCorrect() {	
 		Mockito.when(mockCustomerServiceImpl.findByUserName("arthurd")).thenReturn(returnCustomer);
 		String testName = returnCustomer.getName();
