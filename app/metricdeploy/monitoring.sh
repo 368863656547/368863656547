@@ -50,3 +50,7 @@ fi
 if ! kubectl get -f ${WEAVE_FILE} &>/dev/null; then
   kubectl create -f ${WEAVE_FILE}
 fi
+
+# enable metrics for cloudwatch
+aws autoscaling enable-metrics-collection --auto-scaling-group-name="nodes.k8s-showcase.cluster.k8s.local" --granularity "1Minute"
+aws autoscaling enable-metrics-collection --auto-scaling-group-name="master-eu-central-1a.masters.k8s-showcase.cluster.k8s.local" --granularity "1Minute"
