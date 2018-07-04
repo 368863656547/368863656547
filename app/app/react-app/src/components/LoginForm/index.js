@@ -1,9 +1,9 @@
 import React, { PropTypes, Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
 import { FlatButton } from 'material-ui';
-import Input from '../Input';
 import './styles.css';
 import validate from './validate.js'
+import { TextField } from 'redux-form-material-ui'
 
 class LoginForm extends Component {
 
@@ -11,20 +11,23 @@ class LoginForm extends Component {
     return (
       <div>
         <div className='loginFormHeader'>Sign in to your account</div>
-          <div className='loginFormRow'>
-          <Field 
-            name="username"
-            component={username=>
-              <Input field={username} hintText={"Username"} /> 
-            }
-         />
-          <Field 
-            name="password"
-            component={password=>
-              <Input type={"password"} field={password} hintText={"Password"} /> 
-            }
-         />
-         </div>
+        <div className='loginFormRow'>
+          <div>
+            <Field
+              name="username"
+              component={TextField}
+              hintText="Username"
+            />
+          </div>
+          <div>
+            <Field
+              type="password"
+              name="password"
+              component={TextField}
+              hintText="Password"
+            />
+          </div>
+        </div>
       </div>
     );
   }
@@ -41,7 +44,7 @@ class LoginForm extends Component {
       fontWeight: 600,
     };
 
-    return(
+    return (
       <div className='loginFormButton'>
         <FlatButton
           label="Sign in"
@@ -54,7 +57,7 @@ class LoginForm extends Component {
   }
 
   render() {
-    const { 
+    const {
       handleSubmit,
       error,
     } = this.props;
@@ -79,5 +82,7 @@ LoginForm.propTypes = {
 
 export default LoginForm = reduxForm({
   form: 'loginForm',
+  touchOnBlur: false,
+  touchOnChange: true,
   validate,
 })(LoginForm);

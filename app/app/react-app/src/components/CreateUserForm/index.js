@@ -4,6 +4,7 @@ import { FlatButton } from 'material-ui';
 import Input from '../Input';
 import './styles.css';
 import validate from './validate.js';
+import { TextField } from 'redux-form-material-ui'
 
 class CreateUserForm extends Component {
 
@@ -15,18 +16,21 @@ class CreateUserForm extends Component {
           {header}
         </div>
         <div className='createFormRow'>
-          <Field
-            name="username"
-            component={username =>
-              <Input field={username} hintText={"Choose a user ID"} />
-            }
-          />
-          <Field
-            name="password"
-            component={password =>
-              <Input type={"password"} field={password} hintText={"Choose a password"} />
-            }
-          />
+          <div>
+            <Field
+              name="username"
+              component={TextField}
+              hintText="Choose a user ID"
+            />
+          </div>
+          <div>
+            <Field
+              type="password"
+              name="password"
+              component={TextField}
+              hintText="Choose a password"
+            />
+          </div>
         </div>
       </div>
     );
