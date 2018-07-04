@@ -84,4 +84,5 @@ public class UtilityController {
     	}
     	loadTest.put("status", status);
 		return new ResponseEntity<JSONObject>(loadTest, HttpStatus.OK);
+	}
 }
