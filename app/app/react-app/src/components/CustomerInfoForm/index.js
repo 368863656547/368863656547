@@ -2,7 +2,6 @@ import React, { PropTypes, Component } from 'react';
 import { Link } from 'react-router';
 import { Field, reduxForm } from 'redux-form';
 import { FlatButton } from 'material-ui';
-import Input from '../../components/Input';
 import './styles.css';
 import { TextField } from 'redux-form-material-ui'
 

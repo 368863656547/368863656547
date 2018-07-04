@@ -1,7 +1,6 @@
 import React, { PropTypes, Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
 import { FlatButton } from 'material-ui';
-import Input from '../Input';
 import './styles.css';
 import validate from './validate.js';
 import { TextField } from 'redux-form-material-ui'
