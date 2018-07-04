@@ -74,7 +74,7 @@ public class UtilityController {
     public ResponseEntity<?> loadTest(@PathVariable("iterations") long iterations) {
     	logger.info("Performing load test");
     	JSONObject loadTest = new JSONObject();
-		String status;
+		String status = "";
 		for (long i = 0; i < iterations; ++ i)
     	try
     	{
