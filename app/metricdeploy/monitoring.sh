@@ -54,5 +54,3 @@ fi
 # enable metrics for cloudwatch
 aws autoscaling enable-metrics-collection --auto-scaling-group-name="nodes.k8s-showcase.cluster.k8s.local" --granularity "1Minute"
 aws autoscaling enable-metrics-collection --auto-scaling-group-name="master-eu-central-1a.masters.k8s-showcase.cluster.k8s.local" --granularity "1Minute"
-
-aws autoscaling put-scaling-policy --auto-scaling-group-name="nodes.k8s-showcase.cluster.k8s.local" --estimated-instance-warmup=120 --policy-name="CPU-Utilization" --policy-type=TargetTrackingScaling --target-tracking-configuration='{"PredefinedMetricSpecification": {"PredefinedMetricType": "ASGAverageCPUUtilization"}, "TargetValue": 65.0, "DisableScaleIn": false}' > /dev/null
