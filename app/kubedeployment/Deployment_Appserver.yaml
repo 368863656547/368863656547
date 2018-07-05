@@ -65,4 +65,29 @@ spec:
           secretName: secrets
 status:
 
+---
+
+apiVersion: v1
+items:
+- apiVersion: autoscaling/v1
+  kind: HorizontalPodAutoscaler
+  metadata:
+    annotations:
+      autoscaling.alpha.kubernetes.io/conditions: '[{"type":"AbleToScale","status":"False","lastTransitionTime":"2018-07-05T09:48:35Z","reason":"BackoffDownscale","message":"the
+        time since the previous scale is still within the downscale forbidden window"},{"type":"ScalingActive","status":"True","lastTransitionTime":"2018-07-05T09:45:05Z","reason":"ValidMetricFound","message":"the
+        HPA was able to succesfully calculate a replica count from cpu resource utilization
+        (percentage of request)"},{"type":"ScalingLimited","status":"True","lastTransitionTime":"2018-07-05T09:47:05Z","reason":"TooFewReplicas","message":"the
+        desired replica count was less than the minimum replica count"}]'
+      autoscaling.alpha.kubernetes.io/current-metrics: '[{"type":"Resource","resource":{"name":"cpu","currentAverageUtilization":0,"currentAverageValue":"0"}}]'
+    name: appserver
+    namespace: default
+  spec:
+    maxReplicas: 10
+    minReplicas: 1
+    scaleTargetRef:
+      apiVersion: extensions/v1beta1
+      kind: Deployment
+      name: appserver
+    targetCPUUtilizationPercentage: 30
+  status:
 
