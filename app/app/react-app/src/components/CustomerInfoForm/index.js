@@ -2,8 +2,8 @@ import React, { PropTypes, Component } from 'react';
 import { Link } from 'react-router';
 import { Field, reduxForm } from 'redux-form';
 import { FlatButton } from 'material-ui';
-import Input from '../../components/Input';
 import './styles.css';
+import { TextField } from 'redux-form-material-ui'
 
 class CustomerInfoForm extends Component {
 
@@ -12,39 +12,42 @@ class CustomerInfoForm extends Component {
       <div>
         <div className='infoHeader'>Credit Card Information</div>
         <div className='infoRow'>
-          <Field
-            name="firstName"
-            component={firstName =>
-              <Input field={firstName} hintText={"First Name"} />
-            }
-          />
-          <Field
-            name="lastName"
-            component={lastName =>
-              <Input field={lastName} hintText={"Last Name"} />
-            }
-          />
+          <div>
+            <Field
+              name="firstName"
+              component={TextField}
+              hintText="First Name"
+            />
+          </div>
+          <div>
+            <Field
+              name="lastName"
+              component={TextField}
+              hintText="Last Name"
+            />
+          </div>
         </div>
         <div className='infoRow'>
-          <Field
-            name="cardNumber"
-            component={cardNumber =>
-              <Input field={cardNumber} hintText={"Card Number"} />
-            }
-          />
-          <Field
-            name="cvv"
-            component={cvv =>
-              <Input field={cvv} hintText={"CVV"} />
-            }
-          />
+          <div>
+            <Field
+              name="cardNumber"
+              component={TextField}
+              hintText="Card Number"
+            />
+          </div>
+          <div>
+            <Field
+              name="cvv"
+              component={TextField}
+              hintText="CVV"
+            />
+          </div>
         </div>
         <div className='infoRow'>
           <Field
             name="expirationDate"
-            component={date =>
-              <Input field={date} hintText={"MM/YY"} />
-            }
+            component={TextField}
+            hintText="MM/YY"
           />
         </div>
       </div>
@@ -56,32 +59,36 @@ class CustomerInfoForm extends Component {
       <div>
         <div className='infoHeader'>Billing Information</div>
         <div className='infoRow'>
-          <Field
-            name="company"
-            component={company =>
-              <Input field={company} hintText={"Company"} />
-            }
-          />
-          <Field
-            name="title"
-            component={title =>
-              <Input field={title} hintText={"Title"} />
-            }
-          />
+          <div>
+            <Field
+              name="company"
+              component={TextField}
+              hintText="Company"
+            />
+          </div>
+          <div>
+            <Field
+              name="title"
+              component={TextField}
+              hintText="Title"
+            />
+          </div>
         </div>
         <div className='infoRow'>
-          <Field
-            name="address"
-            component={address =>
-              <Input field={address} hintText={"Address"} />
-            }
-          />
-          <Field
-            name="city"
-            component={city =>
-              <Input field={city} hintText={"City"} />
-            }
-          />
+          <div>
+            <Field
+              name="address"
+              component={TextField}
+              hintText="Address"
+            />
+          </div>
+          <div>
+            <Field
+              name="city"
+              component={TextField}
+              hintText="City"
+            />
+          </div>
         </div>
       </div>
     );
