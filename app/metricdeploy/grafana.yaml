@@ -76,7 +76,7 @@ data:
       type: cloudwatch
       jsonData:
         authType: credentials
-        defaultRegion: us-east-1
+        defaultRegion: eu-central-1
       version: 1
       orgId: 1
       editable: true
