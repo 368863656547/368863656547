@@ -97,7 +97,7 @@ public class CustomerController {
 		logger.info("Fetching Customer with name {}", name);
 		Customer customer = customerService.findByName(name);
 		if (customer == null) {
-			logger.error("Customer with name {} not found.", name);
+			logger.error("Customer with name {} not found!", name);
 			return new ResponseEntity(new CustomErrorType("Customer with name " + name 
 					+ " not found"), HttpStatus.NOT_FOUND);
 		}
