@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -78,6 +79,7 @@ public class UnitTest {
 	
 	// Test CustomerService implementation
 	@Test
+	@Ignore
 	public void whenCustomerUserNameIsProvided_theReturnedNameIsCorrect() {	
 		Mockito.when(mockCustomerServiceImpl.findByUserName("arthurd")).thenReturn(returnCustomer);
 		String testName = returnCustomer.getName();
