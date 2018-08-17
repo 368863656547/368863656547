@@ -2,7 +2,7 @@ import React from 'react';
 import './styles.css'
 
 const Header = () => {
-  const title = 'Welcome to the Atsea Shop '
+  const title = 'Welcome to the Pleasure Dome '
   const subtitle = ''
   return (
     <div className='headerSection'>
